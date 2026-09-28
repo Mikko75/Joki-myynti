@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
+import { SectionNotes } from "@/components/common/SectionNotes"
 import { SectionChat } from "@/components/common/SectionChat"
 import { WorkOrderHeader } from "@/components/layout/WorkOrderHeader"
 import {
@@ -794,6 +795,7 @@ export default function CateringPage() {
         </div>
       )}
 
+      <SectionNotes sectionKey="catering" />
       <SectionChat sectionKey="catering" />
       </>
       )}

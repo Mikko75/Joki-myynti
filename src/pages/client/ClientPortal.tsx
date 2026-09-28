@@ -66,7 +66,8 @@ export default function ClientPortal({ workOrderId }: { workOrderId: string }) {
   const hasPriceBreakdown = tilaTotal > 0 || cateringTotal > 0 || avPlan.price > 0 || addOnsTotal > 0
 
   const isOptio = workOrder.offerPhase === "optio"
-  const isConfirmed = workOrder.status === "vahvistettu"
+  const clientProposals = (workOrder.proposalSections ?? []).filter((p) => p.status !== "draft")
+  const isConfirmed = clientProposals.length > 0 && clientProposals.every((p) => p.status === "approved")
 
   return (
     <div className="max-w-5xl mx-auto py-8 px-4">
@@ -83,8 +84,12 @@ export default function ClientPortal({ workOrderId }: { workOrderId: string }) {
       {isConfirmed && (
         <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-center">
           <CheckCircle2 className="h-8 w-8 text-emerald-500 mx-auto mb-2" />
-          <p className="text-[15px] font-semibold text-emerald-800">Tarjous hyväksytty</p>
-          <p className="text-[12px] text-emerald-600 mt-1">Kiitos! Olemme yhteydessä tapahtuman järjestelyistä.</p>
+          <p className="text-[15px] font-semibold text-emerald-800">
+            {isOptio ? "Ehdotus vahvistettu" : "Tarjous hyväksytty"}
+          </p>
+          <p className="text-[12px] text-emerald-600 mt-1">
+            {isOptio ? "Ehdotus on vahvistettu. Myyjä ottaa pian yhteyttä lisätiedoista." : "Kiitos! Olemme yhteydessä tapahtuman järjestelyistä."}
+          </p>
         </div>
       )}
 
@@ -339,17 +344,9 @@ export default function ClientPortal({ workOrderId }: { workOrderId: string }) {
                 )}
               </div>
               <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2">
-                <span className="font-medium text-gray-700">AV / tekniikka</span>
-                {(avPlan.price ?? 0) > 0 ? (
-                  <span className="font-medium text-gray-900">{(avPlan.price ?? 0).toLocaleString("fi-FI")} €</span>
-                ) : (
-                  <span className="text-gray-400">Ei aloitettu</span>
-                )}
-              </div>
-              <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2">
-                <span className="font-medium text-gray-700">Lisäpalvelut</span>
-                {addOnsTotal > 0 ? (
-                  <span className="font-medium text-gray-900">{addOnsTotal.toLocaleString("fi-FI")} €</span>
+                <span className="font-medium text-gray-700">Lisäpalvelut & AV</span>
+                {(avPlan.price ?? 0) > 0 || addOnsTotal > 0 ? (
+                  <span className="font-medium text-gray-900">{((avPlan.price ?? 0) + addOnsTotal).toLocaleString("fi-FI")} €</span>
                 ) : (
                   <span className="text-gray-400">Ei aloitettu</span>
                 )}
@@ -418,62 +415,57 @@ export default function ClientPortal({ workOrderId }: { workOrderId: string }) {
                   <div className="flex justify-between text-[15px] font-bold mt-1"><span>Yhteensä</span><span>{verollinen.toLocaleString("fi-FI", { maximumFractionDigits: 0 })} €</span></div>
                 </div>
               </div>
+            </Card>
+          )}
 
-              {/* Action buttons */}
-              {!isConfirmed && (
-                <div className="mt-5 pt-4 border-t border-gray-200">
-                  {/* Primary action — dominant, matches "Pay Now" weight */}
-                  {isOptio ? (
-                    <Button
-                      size="lg"
-                      className="w-full justify-center gap-2 bg-gray-900 hover:bg-gray-800 text-base"
-                      onClick={() => {
-                        const updatedDays = workOrder.eventDays.map((d) => ({
-                          ...d,
-                          spaces: d.spaces.map((s) => ({ ...s, optionStatus: "vahvistettu" })),
-                        }))
-                        updateWorkOrder(workOrderId, { status: "tyonalla", eventDays: updatedDays })
-                      }}
-                    >
-                      <CheckCircle2 className="h-4.5 w-4.5" />
-                      Vahvista optio
-                    </Button>
-                  ) : (
-                    <Button
-                      size="lg"
-                      className="w-full justify-center gap-2 bg-gray-900 hover:bg-gray-800 text-base"
-                      onClick={() => updateWorkOrder(workOrderId, { status: "vahvistettu" })}
-                    >
-                      <CheckCircle2 className="h-4.5 w-4.5" />
-                      Hyväksy tarjous
-                    </Button>
-                  )}
+          {/* Action buttons — always visible when not confirmed */}
+          {!isConfirmed && (
+            <Card>
+              <Button
+                size="lg"
+                className="w-full justify-center gap-2 bg-gray-900 hover:bg-gray-800 text-white text-base"
+                onClick={() => {
+                  const updatedProposals = (workOrder.proposalSections ?? []).map((p) =>
+                    p.status === "sent" ? { ...p, status: "approved" as const } : p
+                  )
+                  const updates: Record<string, unknown> = {
+                    proposalSections: updatedProposals,
+                  }
+                  if (isOptio) {
+                    updates.eventDays = workOrder.eventDays.map((d) => ({
+                      ...d,
+                      spaces: d.spaces.map((s) => ({ ...s, optionStatus: "vahvistettu" })),
+                    }))
+                  }
+                  updateWorkOrder(workOrderId, updates)
+                }}
+              >
+                <CheckCircle2 className="h-4.5 w-4.5" />
+                Vahvista ehdotus
+              </Button>
 
-                  {/* Secondary actions — lower visual weight */}
-                  <div className="mt-3 flex items-center justify-center gap-4 text-[12px]">
-                    <button
-                      className="text-gray-500 hover:text-gray-700 underline-offset-2 hover:underline cursor-pointer"
-                      onClick={() => updateWorkOrder(workOrderId, { status: "tyonalla" })}
-                    >
-                      Pyydä muutoksia
-                    </button>
-                    <span className="text-gray-300">·</span>
-                    <button
-                      className="text-gray-500 hover:text-gray-700 underline-offset-2 hover:underline cursor-pointer inline-flex items-center gap-1"
-                    >
-                      <Download className="h-3 w-3" />
-                      Lataa PDF
-                    </button>
-                    <span className="text-gray-300">·</span>
-                    <button
-                      className="text-red-500 hover:text-red-700 underline-offset-2 hover:underline cursor-pointer"
-                      onClick={() => setShowConfirmReject(true)}
-                    >
-                      Hylkää tarjous
-                    </button>
-                  </div>
-                </div>
-              )}
+              <div className="mt-3 flex items-center justify-center gap-4 text-[12px]">
+                <button
+                  className="text-gray-500 hover:text-gray-700 underline-offset-2 hover:underline cursor-pointer"
+                  onClick={() => updateWorkOrder(workOrderId, { status: "tyonalla" })}
+                >
+                  Pyydä muutoksia
+                </button>
+                <span className="text-gray-300">·</span>
+                <button
+                  className="text-gray-500 hover:text-gray-700 underline-offset-2 hover:underline cursor-pointer inline-flex items-center gap-1"
+                >
+                  <Download className="h-3 w-3" />
+                  Lataa PDF
+                </button>
+                <span className="text-gray-300">·</span>
+                <button
+                  className="text-red-500 hover:text-red-700 underline-offset-2 hover:underline cursor-pointer"
+                  onClick={() => setShowConfirmReject(true)}
+                >
+                  Hylkää tarjous
+                </button>
+              </div>
             </Card>
           )}
 

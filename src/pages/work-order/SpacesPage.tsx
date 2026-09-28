@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { InfoBanner } from "@/components/common/InfoBanner"
 import { DayTabs } from "@/components/common/DayTabs"
+import { SectionNotes } from "@/components/common/SectionNotes"
 import { SectionChat } from "@/components/common/SectionChat"
 import { WorkOrderHeader } from "@/components/layout/WorkOrderHeader"
 import { spaces as allSpaces } from "@/data/mock"
@@ -50,7 +51,10 @@ export default function SpacesPage() {
         ? { ...d, spaces: [...d.spaces, newEventSpace] }
         : d
     )
-    updateWorkOrder(workOrderId, { eventDays: updatedDays })
+    updateWorkOrder(workOrderId, {
+      eventDays: updatedDays,
+      sectionStatuses: { ...workOrder!.sectionStatuses, tila: "kaynnissa" },
+    })
     setShowSuccess(space.name)
     setTimeout(() => setShowSuccess(""), 3000)
   }
@@ -62,7 +66,14 @@ export default function SpacesPage() {
         ? { ...d, spaces: d.spaces.filter((s) => s.spaceId !== spaceId) }
         : d
     )
-    updateWorkOrder(workOrderId, { eventDays: updatedDays })
+    const remainingSpaces = updatedDays.flatMap((d) => d.spaces)
+    updateWorkOrder(workOrderId, {
+      eventDays: updatedDays,
+      sectionStatuses: {
+        ...workOrder!.sectionStatuses,
+        tila: remainingSpaces.length > 0 ? "kaynnissa" : "ei_aloitettu",
+      },
+    })
   }
 
   const hasEventDays = workOrder.eventDays.length > 0
@@ -98,34 +109,6 @@ export default function SpacesPage() {
             </div>
           )}
 
-          {/* Selected spaces */}
-          {selectedSpaces.length > 0 && (
-            <div className="rounded-xl border border-gray-200 bg-white p-5">
-              <h2 className="text-[14px] font-semibold text-gray-900 mb-3">
-                Valitut tilat · {selectedSpaces.length}
-              </h2>
-              <div className="flex flex-wrap gap-2">
-                {selectedSpaces.map((es) => (
-                  <div
-                    key={es.spaceId}
-                    className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2"
-                  >
-                    <MapPin className="h-3.5 w-3.5 text-emerald-600" />
-                    <span className="text-[13px] font-medium text-emerald-800">{es.spaceName}</span>
-                    <Badge variant="outline" className="text-[10px] border-emerald-300 text-emerald-700">Optio</Badge>
-                    <span className="text-[12px] text-emerald-600 font-medium">{es.price.toLocaleString("fi-FI")} €</span>
-                    <button
-                      className="ml-1 p-0.5 text-emerald-400 hover:text-red-500 transition-colors"
-                      onClick={() => removeSpace(es.spaceId)}
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* Search */}
           <div className="space-y-3">
             <h2 className="text-[15px] font-semibold text-gray-900">Hae sopivia tiloja</h2>
@@ -141,17 +124,24 @@ export default function SpacesPage() {
           </div>
 
           {/* Space cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {filtered.map((space) => {
               const isSelected = selectedIds.has(space.id)
 
               return (
                 <div
                   key={space.id}
-                  className={`relative rounded-xl border bg-white p-5 transition-all ${
+                  className={`relative rounded-xl border bg-white overflow-hidden transition-all ${
                     isSelected ? "border-emerald-300 ring-1 ring-emerald-200 bg-emerald-50/30" : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
                   }`}
                 >
+                  {space.image && (
+                    <div className="h-36 w-full overflow-hidden">
+                      <img src={space.image} alt={space.name} className="h-full w-full object-cover" />
+                    </div>
+                  )}
+
+                  <div className="p-5">
                   <Badge
                     variant={space.available ? "success" : "warning"}
                     className="absolute right-4 top-4"
@@ -160,7 +150,7 @@ export default function SpacesPage() {
                   </Badge>
 
                   {isSelected && (
-                    <div className="absolute left-4 top-4">
+                    <div className={`absolute left-4 ${space.image ? "top-[calc(9rem+1rem)]" : "top-4"}`}>
                       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white">
                         <Check className="h-3.5 w-3.5" />
                       </div>
@@ -203,31 +193,72 @@ export default function SpacesPage() {
                       </Button>
                     )}
                   </div>
+                  </div>
                 </div>
               )
             })}
           </div>
 
-          {/* Send optio to client */}
-          {selectedSpaces.length > 0 && workOrder.status !== "asiakkaalla" && workOrder.status !== "vahvistettu" && (
-            <div className="flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50 p-5">
-              <div>
-                <p className="text-[14px] font-semibold text-gray-900">Lähetä tilaoptio asiakkaalle</p>
-                <p className="text-[12px] text-gray-500 mt-0.5">Asiakas näkee valitut tilat ja hinnat ja voi vahvistaa option.</p>
+          {/* Selected spaces — ALAPUOLELLA */}
+          {selectedSpaces.length > 0 && (
+            <div className="rounded-xl border border-gray-200 bg-white p-5">
+              <h2 className="text-[14px] font-semibold text-gray-900 mb-3">
+                Valitut tilat · {selectedSpaces.length}
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {selectedSpaces.map((es) => (
+                  <div
+                    key={es.spaceId}
+                    className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2"
+                  >
+                    <MapPin className="h-3.5 w-3.5 text-emerald-600" />
+                    <span className="text-[13px] font-medium text-emerald-800">{es.spaceName}</span>
+                    <Badge variant="outline" className="text-[10px] border-emerald-300 text-emerald-700">Optio</Badge>
+                    <span className="text-[12px] text-emerald-600 font-medium">{es.price.toLocaleString("fi-FI")} €</span>
+                    <button
+                      className="ml-1 p-0.5 text-emerald-400 hover:text-red-500 transition-colors"
+                      onClick={() => removeSpace(es.spaceId)}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
               </div>
-              <Button onClick={() => updateWorkOrder(workOrderId, { status: "asiakkaalla", offerPhase: "optio" })}>
-                Lähetä optio
-              </Button>
+              <div className="mt-4 flex items-center justify-between pt-3 border-t border-gray-100">
+                <div>
+                  <p className="text-[13px] font-semibold text-gray-900">
+                    Yhteensä: {selectedSpaces.reduce((sum, s) => sum + s.price, 0).toLocaleString("fi-FI")} €
+                  </p>
+                  <p className="text-[11px] text-gray-500">{selectedSpaces.length} tilaa valittu</p>
+                </div>
+                {workOrder.sectionStatuses.tila === "valmis" ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-100 px-3 py-1.5 text-[13px] font-medium text-emerald-700">
+                    <Check className="h-3.5 w-3.5" />
+                    Vahvistettu
+                  </span>
+                ) : (
+                  <Button
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => {
+                      updateWorkOrder(workOrderId, {
+                        sectionStatuses: { ...workOrder!.sectionStatuses, tila: "valmis" },
+                      })
+                      setShowSuccess("Tilavalinta vahvistettu")
+                      setTimeout(() => setShowSuccess(""), 3000)
+                      window.scrollTo({ top: 0, behavior: "smooth" })
+                    }}
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                    Vahvista tilavalinta
+                  </Button>
+                )}
+              </div>
             </div>
           )}
 
-          {workOrder.status === "asiakkaalla" && workOrder.offerPhase === "optio" && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
-              <p className="text-[14px] font-semibold text-gray-900">Tilaoptio lähetetty asiakkaalle</p>
-              <p className="text-[12px] text-gray-500 mt-0.5">Odottaa asiakkaan vahvistusta.</p>
-            </div>
-          )}
 
+          <SectionNotes sectionKey="tilat" />
           <SectionChat sectionKey="tilat" />
         </>
       )}

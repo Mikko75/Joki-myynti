@@ -1,3 +1,12 @@
+export type ProposalSectionStatus = "draft" | "sent" | "approved" | "changes_requested"
+
+export interface ProposalSection {
+  sectionKey: string
+  sentAt: string | null
+  status: ProposalSectionStatus
+  clientComment?: string
+}
+
 export type WorkOrderStatus =
   | 'uusi'
   | 'tyonalla'
@@ -74,8 +83,11 @@ export interface WorkOrder {
   isCompetitiveBid?: boolean
   additionalNotes?: string
   notes?: { id: string; text: string; createdAt: string }[]
+  sectionNotes?: Record<string, string>
   attachments?: Attachment[]
   selectedAddOns?: { productId: string; quantity?: number }[]
+  proposalSections?: ProposalSection[]
+  customSections?: CustomSection[]
 }
 
 export interface ScheduleTemplateItem {
@@ -113,6 +125,16 @@ export interface Attachment {
   addedBy: string
 }
 
+export interface CustomSection {
+  id: string
+  type: string
+  title: string
+  description: string
+  price?: number
+  attachments?: Attachment[]
+  showToClient: boolean
+}
+
 export interface Participant {
   id: string
   name: string
@@ -147,6 +169,7 @@ export interface Space {
   available: boolean
   availableStart: string
   availableEnd: string
+  image?: string
 }
 
 export interface EventSpace {

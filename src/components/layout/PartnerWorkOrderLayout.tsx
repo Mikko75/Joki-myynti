@@ -14,7 +14,7 @@ const sectionNav: Record<string, { label: string; icon: LucideIcon }> = {
   yleiskuva: { label: "Yleiskuva", icon: LayoutDashboard },
   catering: { label: "Catering", icon: UtensilsCrossed },
   av: { label: "AV / tekniikka", icon: Monitor },
-  tilat: { label: "Tilat & optio", icon: MapPin },
+  tilat: { label: "Tilat", icon: MapPin },
   aikataulu: { label: "Aikataulu", icon: Clock },
   keskustelu: { label: "Keskustelu", icon: MessageSquare },
   lisapalvelut: { label: "Lisäpalvelut", icon: Package },

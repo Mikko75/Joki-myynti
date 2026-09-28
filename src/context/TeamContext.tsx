@@ -19,7 +19,7 @@ export const SECTION_LABEL_TO_KEY: Record<string, string> = {
   "AV / tekniikka": "av",
   "Aikataulut": "aikataulu",
   "Kaikki keskustelut": "keskustelut",
-  "Lisätä": "lisapalvelut",
+  "Lisäpalvelut": "lisapalvelut",
 }
 
 export const SECTION_KEY_TO_LABEL: Record<string, string> = {
@@ -28,7 +28,7 @@ export const SECTION_KEY_TO_LABEL: Record<string, string> = {
   av: "AV / tekniikka",
   aikataulu: "Aikataulut",
   keskustelut: "Kaikki keskustelut",
-  lisapalvelut: "Lisätä",
+  lisapalvelut: "Lisäpalvelut",
 }
 
 interface TeamContextValue {

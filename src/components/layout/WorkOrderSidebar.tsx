@@ -21,7 +21,7 @@ interface WorkOrderSidebarProps {
 
 const navItems = [
   { id: "yleiskuva", label: "Yleiskuva", icon: LayoutDashboard },
-  { id: "tilat", label: "Tilat & optio", icon: MapPin },
+  { id: "tilat", label: "Tilat", icon: MapPin },
   { id: "aikataulu", label: "Aikataulu", icon: Clock },
   { id: "lisapalvelut", label: "Lisäpalvelut", icon: Package },
   { id: "catering", label: "Catering", icon: UtensilsCrossed },

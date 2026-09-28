@@ -1,5 +1,6 @@
+import type { ReactNode } from "react"
 import { Link } from "react-router-dom"
-import { MoreVertical, Calendar, Plus } from "lucide-react"
+import { Calendar } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface StatusRowItem {
@@ -22,7 +23,9 @@ interface WorkOrderSectionCardProps {
   subtitle?: string
   badgeLabel: string
   badgeClassName: string
+  badgeIcon?: ReactNode
   progress: number
+  hideProgress?: boolean
   description: string
   members?: CardMember[]
   dateLabel?: string
@@ -37,7 +40,9 @@ export function WorkOrderSectionCard({
   subtitle,
   badgeLabel,
   badgeClassName,
+  badgeIcon,
   progress,
+  hideProgress,
   description,
   members = [],
   dateLabel,
@@ -57,28 +62,30 @@ export function WorkOrderSectionCard({
         isClickable ? "no-underline hover:shadow-md hover:border-gray-300 cursor-pointer" : ""
       )}
     >
-      <div className="flex items-start justify-between">
-        <span className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold", badgeClassName)}>
+      <div className="flex items-start">
+        <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold", badgeClassName)}>
+          {badgeIcon}
           {badgeLabel}
         </span>
-        <MoreVertical className="h-4 w-4 text-gray-300" />
       </div>
 
       <h3 className="mt-3 text-lg font-bold text-gray-900">{title}</h3>
       {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
 
-      <div className="mt-4">
-        <div className="flex items-center justify-between text-[12px]">
-          <span className="text-gray-500">Progress</span>
-          <span className="font-bold text-gray-900">{progress}%</span>
+      {!hideProgress && (
+        <div className="mt-4">
+          <div className="flex items-center justify-between text-[12px]">
+            <span className="text-gray-500">Progress</span>
+            <span className="font-bold text-gray-900">{progress}%</span>
+          </div>
+          <div className="mt-1.5 h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-primary-600 transition-all"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
         </div>
-        <div className="mt-1.5 h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
-          <div
-            className="h-full rounded-full bg-primary-600 transition-all"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      </div>
+      )}
 
       <p className="mt-4 text-[13px] text-gray-600 leading-relaxed line-clamp-3">
         {description}
@@ -105,25 +112,16 @@ export function WorkOrderSectionCard({
 
       <div className="mt-auto pt-4 flex items-center justify-between">
         <div className="flex items-center">
-          {members.length > 0 ? (
-            members.slice(0, 3).map((m, i) => (
-              <div
-                key={m.id}
-                className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold text-white border-2 border-white"
-                style={{ backgroundColor: m.color, marginLeft: i > 0 ? "-8px" : "0" }}
-                title={m.name}
-              >
-                {m.initials}
-              </div>
-            ))
-          ) : (
+          {members.slice(0, 3).map((m, i) => (
             <div
-              className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-dashed border-gray-300 text-gray-400"
-              title="Ei vastuuhenkilöä"
+              key={m.id}
+              className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold text-white border-2 border-white"
+              style={{ backgroundColor: m.color, marginLeft: i > 0 ? "-8px" : "0" }}
+              title={m.name}
             >
-              <Plus className="h-3 w-3" />
+              {m.initials}
             </div>
-          )}
+          ))}
         </div>
         {dateLabel && (
           <div className="flex items-center gap-1.5 text-[12px] text-gray-400">

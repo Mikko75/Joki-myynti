@@ -118,12 +118,15 @@ export function UnifiedLayout() {
 
   const sectionLabel = (() => {
     const labels: Record<string, string> = {
-      yleiskuva: "Yleiskuva", tilat: "Tilat & optio", aikataulu: "Aikataulu",
+      yleiskuva: "Yleiskuva", tilat: "Tilat", aikataulu: "Aikataulu",
       catering: "Catering", lisapalvelut: "Lisäpalvelut", av: "AV / tekniikka",
       keskustelut: "Kaikki keskustelut", tarjous: "Yhteenveto", asiakas: "Asiakasportaali",
-      "asiakas-chat": "Asiakas", kutsu: "Kutsu", perustiedot: "Perustiedot",
+      "asiakas-chat": "Asiakas", kutsu: "Kutsu", perustiedot: "Perustiedot", ehdotus: "Ehdotus",
     }
-    return labels[lastSegment] ?? lastSegment
+    if (labels[lastSegment]) return labels[lastSegment]
+    const cs = workOrder?.customSections?.find((s) => s.id === lastSegment)
+    if (cs) return cs.title
+    return lastSegment
   })()
 
   return (
@@ -171,6 +174,7 @@ export function UnifiedLayout() {
                   const Icon = item.icon
                   const isActive = lastSegment === item.id
                   const sectionMembers = isSeller ? getMembersForSection(item.id) : []
+
                   return (
                     <Link
                       key={item.id}
@@ -182,7 +186,7 @@ export function UnifiedLayout() {
                       )}
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <Icon className={NAV_ICON_CLASS} />
+                        <Icon className={cn(NAV_ICON_CLASS, item.iconColor)} />
                         <span className="truncate">{item.label}</span>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
@@ -252,7 +256,7 @@ export function UnifiedLayout() {
                   className={cn(COLLAPSED_NAV_ITEM_CLASS, isActive && COLLAPSED_NAV_ITEM_ACTIVE_CLASS)}
                   title={item.label}
                 >
-                  <Icon className="h-6 w-6" />
+                  <Icon className={cn("h-6 w-6", item.iconColor)} />
                 </Link>
               )
             })}

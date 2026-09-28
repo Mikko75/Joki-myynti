@@ -18,15 +18,22 @@ import PartnerProductsPage from "@/pages/partner/PartnerProductsPage"
 import ClientPortal from "@/pages/client/ClientPortal"
 import InvitePage from "@/pages/work-order/InvitePage"
 import PerustiedotPage from "@/pages/work-order/PerustiedotPage"
+import ProposalView from "@/pages/client/ProposalView"
+import CustomSectionPage from "@/pages/work-order/CustomSectionPage"
 
 function ClientPortalPage() {
   const { id } = useParams<{ id: string }>()
   return <ClientPortal workOrderId={id ?? ""} />
 }
 
+function ProposalViewPage() {
+  const { id } = useParams<{ id: string }>()
+  return <ProposalView workOrderId={id ?? ""} />
+}
+
 function ModeRedirect() {
   const { mode } = useMode()
-  if (mode === "client") return <Navigate to="asiakas" replace />
+  if (mode === "client") return <Navigate to="ehdotus" replace />
   return <Navigate to="yleiskuva" replace />
 }
 
@@ -59,6 +66,7 @@ export function ModeRouter() {
         <Route path="perustiedot" element={<PerustiedotPage />} />
         <Route path="kutsu" element={<InvitePage />} />
         <Route path="asiakas" element={<ClientPortalPage />} />
+        <Route path="ehdotus" element={<ProposalViewPage />} />
         <Route path="tilat" element={<SpacesPage />} />
         <Route path="aikataulu" element={<ScheduleRouter />} />
         <Route path="catering" element={<CateringRouter />} />
@@ -68,6 +76,7 @@ export function ModeRouter() {
         <Route path="asiakas-chat" element={<CustomerChatPage />} />
         <Route path="keskustelut" element={<ChatRouter />} />
         <Route path="keskustelu" element={<PartnerChatPage />} />
+        <Route path="osio/:sectionId" element={<CustomSectionPage />} />
         <Route path="tarjous" element={<OfferPage />} />
         <Route path="*" element={<ModeRedirect />} />
       </Route>
