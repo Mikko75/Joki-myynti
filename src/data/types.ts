@@ -1,10 +1,11 @@
-export type ProposalSectionStatus = "draft" | "sent" | "approved" | "changes_requested"
+export type ProposalSectionStatus = "draft" | "sent" | "approved" | "changes_requested" | "expired"
 
 export interface ProposalSection {
   sectionKey: string
   sentAt: string | null
   status: ProposalSectionStatus
   clientComment?: string
+  deadline?: string
 }
 
 export type WorkOrderStatus =

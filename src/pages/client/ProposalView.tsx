@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { CheckCircle2, RotateCcw, MessageSquare } from "lucide-react"
+import { CheckCircle2, RotateCcw, MessageSquare, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardTitle } from "@/components/ui/card"
@@ -13,6 +13,7 @@ const STATUS_META: Record<ProposalSectionStatus, { label: string; badge: string 
   sent: { label: "Odottaa vastausta", badge: "bg-amber-100 text-amber-700" },
   approved: { label: "Hyväksytty", badge: "bg-emerald-100 text-emerald-700" },
   changes_requested: { label: "Muutoksia pyydetty", badge: "bg-red-100 text-red-700" },
+  expired: { label: "Vanhentunut", badge: "bg-gray-100 text-gray-500" },
 }
 
 const SECTION_LABELS: Record<string, string> = {
@@ -165,6 +166,19 @@ export default function ProposalView({ workOrderId }: { workOrderId: string }) {
             {p.status === "changes_requested" && (
               <div className="flex items-center gap-2 text-[13px] text-amber-600">
                 <MessageSquare className="h-4 w-4" /> Muutospyyntö lähetetty myyjälle
+              </div>
+            )}
+
+            {p.status === "expired" && (
+              <div className="flex items-center gap-2 text-[13px] text-gray-500">
+                <Clock className="h-4 w-4" /> Varaus on päättynyt
+              </div>
+            )}
+
+            {p.status === "sent" && p.deadline && (
+              <div className="flex items-center gap-1.5 text-[11px] text-gray-500 mt-2">
+                <Clock className="h-3 w-3" />
+                Voimassa {new Date(p.deadline).toLocaleDateString("fi-FI")} asti
               </div>
             )}
 

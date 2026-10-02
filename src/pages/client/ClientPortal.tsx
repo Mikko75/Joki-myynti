@@ -1,9 +1,11 @@
-import { useState } from "react"
-import { Calendar, Users, MapPin, Clock, UtensilsCrossed, Download, MessageSquare, CheckCircle2, Building2, Plus, Check, Sparkles } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Calendar, Users, MapPin, Clock, UtensilsCrossed, MessageSquare, CheckCircle2, Building2, Plus, Check, Sparkles, AlertTriangle } from "lucide-react"
+import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardTitle } from "@/components/ui/card"
 import { useWorkOrders } from "@/context/WorkOrderContext"
+import { cn } from "@/lib/utils"
 import { SectionChat } from "@/components/common/SectionChat"
 import { spaces as spaceCatalog, additionalServices } from "@/data/mock"
 import type { ScheduleItemType } from "@/data/types"
@@ -65,9 +67,31 @@ export default function ClientPortal({ workOrderId }: { workOrderId: string }) {
   const verollinen = veroton + alv
   const hasPriceBreakdown = tilaTotal > 0 || cateringTotal > 0 || avPlan.price > 0 || addOnsTotal > 0
 
+  const [changeComment, setChangeComment] = useState("")
+  const [showChangeForm, setShowChangeForm] = useState(false)
+
   const isOptio = workOrder.offerPhase === "optio"
+
+  // Expire sent proposals with passed deadlines
+  useEffect(() => {
+    const raw = workOrder.proposalSections ?? []
+    const now = new Date()
+    const hasExpired = raw.some((p) => p.status === "sent" && p.deadline && now > new Date(p.deadline))
+    if (hasExpired) {
+      const fixed = raw.map((p) =>
+        p.status === "sent" && p.deadline && now > new Date(p.deadline) ? { ...p, status: "expired" as const } : p
+      )
+      updateWorkOrder(workOrderId, { proposalSections: fixed })
+    }
+  }, [workOrder.proposalSections, workOrderId, updateWorkOrder])
+
   const clientProposals = (workOrder.proposalSections ?? []).filter((p) => p.status !== "draft")
   const isConfirmed = clientProposals.length > 0 && clientProposals.every((p) => p.status === "approved")
+  const isExpired = clientProposals.some((p) => p.status === "expired")
+
+  const tilatProposal = clientProposals.find((p) => p.sectionKey === "tilat")
+  const tilatDeadline = tilatProposal?.deadline
+  const daysUntilDeadline = tilatDeadline ? Math.ceil((new Date(tilatDeadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : null
 
   return (
     <div className="max-w-5xl mx-auto py-8 px-4">
@@ -80,16 +104,43 @@ export default function ClientPortal({ workOrderId }: { workOrderId: string }) {
         <p className="text-[14px] text-gray-500 mt-1">{workOrder.eventType} • {workOrder.number}</p>
       </div>
 
-      {/* Status banner */}
+      {/* Status banners */}
       {isConfirmed && (
         <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-center">
           <CheckCircle2 className="h-8 w-8 text-emerald-500 mx-auto mb-2" />
-          <p className="text-[15px] font-semibold text-emerald-800">
-            {isOptio ? "Ehdotus vahvistettu" : "Tarjous hyväksytty"}
-          </p>
-          <p className="text-[12px] text-emerald-600 mt-1">
-            {isOptio ? "Ehdotus on vahvistettu. Myyjä ottaa pian yhteyttä lisätiedoista." : "Kiitos! Olemme yhteydessä tapahtuman järjestelyistä."}
-          </p>
+          <p className="text-[15px] font-semibold text-emerald-800">Tila vahvistettu</p>
+          <p className="text-[12px] text-emerald-600 mt-1">Tila on varattu. Catering, AV ja muut palvelut täydennetään lähempänä tapahtumaa.</p>
+        </div>
+      )}
+
+      {isExpired && (
+        <div className="mt-6 rounded-xl border border-gray-200 bg-gray-50 p-5 text-center">
+          <AlertTriangle className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+          <p className="text-[15px] font-semibold text-gray-700">Tilan alustava varaus on päättynyt</p>
+          <p className="text-[12px] text-gray-500 mt-1">Ota yhteyttä myyjään uuden ehdotuksen saamiseksi.</p>
+        </div>
+      )}
+
+      {!isConfirmed && !isExpired && tilatDeadline && tilatProposal?.status === "sent" && (
+        <div className={cn(
+          "mt-6 rounded-xl p-5",
+          daysUntilDeadline != null && daysUntilDeadline <= 3
+            ? "border border-amber-200 bg-amber-50"
+            : "border border-blue-200 bg-blue-50"
+        )}>
+          <div className="flex items-start gap-3">
+            <Clock className={cn("h-5 w-5 mt-0.5 shrink-0", daysUntilDeadline != null && daysUntilDeadline <= 3 ? "text-amber-500" : "text-blue-500")} />
+            <div>
+              <p className={cn("text-[14px] font-semibold", daysUntilDeadline != null && daysUntilDeadline <= 3 ? "text-amber-800" : "text-blue-800")}>
+                {daysUntilDeadline != null && daysUntilDeadline <= 3
+                  ? "Tilavarauksesi voimassaolo päättyy pian"
+                  : "Tila on varattu alustavasti sinulle"}
+              </p>
+              <p className={cn("text-[13px] mt-1", daysUntilDeadline != null && daysUntilDeadline <= 3 ? "text-amber-700" : "text-blue-700")}>
+                Vahvista tila ennen {new Date(tilatDeadline).toLocaleDateString("fi-FI")}, jotta varaus säilyy.
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
@@ -418,9 +469,9 @@ export default function ClientPortal({ workOrderId }: { workOrderId: string }) {
             </Card>
           )}
 
-          {/* Action buttons — always visible when not confirmed */}
-          {!isConfirmed && (
-            <Card>
+          {/* Action buttons — 3 CTA:ta */}
+          {!isConfirmed && !isExpired && clientProposals.some((p) => p.status === "sent") && (
+            <Card className="space-y-3">
               <Button
                 size="lg"
                 className="w-full justify-center gap-2 bg-gray-900 hover:bg-gray-800 text-white text-base"
@@ -428,52 +479,74 @@ export default function ClientPortal({ workOrderId }: { workOrderId: string }) {
                   const updatedProposals = (workOrder.proposalSections ?? []).map((p) =>
                     p.status === "sent" ? { ...p, status: "approved" as const } : p
                   )
-                  const updates: Record<string, unknown> = {
+                  updateWorkOrder(workOrderId, {
                     proposalSections: updatedProposals,
-                  }
-                  if (isOptio) {
-                    updates.eventDays = workOrder.eventDays.map((d) => ({
+                    eventDays: workOrder.eventDays.map((d) => ({
                       ...d,
                       spaces: d.spaces.map((s) => ({ ...s, optionStatus: "vahvistettu" })),
-                    }))
-                  }
-                  updateWorkOrder(workOrderId, updates)
+                    })),
+                  })
                 }}
               >
                 <CheckCircle2 className="h-4.5 w-4.5" />
-                Vahvista ehdotus
+                Vahvista tila
               </Button>
 
-              <div className="mt-3 flex items-center justify-center gap-4 text-[12px]">
-                <button
-                  className="text-gray-500 hover:text-gray-700 underline-offset-2 hover:underline cursor-pointer"
-                  onClick={() => updateWorkOrder(workOrderId, { status: "tyonalla" })}
+              {!showChangeForm ? (
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="w-full justify-center gap-2 text-base"
+                  onClick={() => setShowChangeForm(true)}
                 >
+                  <MessageSquare className="h-4.5 w-4.5" />
                   Pyydä muutoksia
-                </button>
-                <span className="text-gray-300">·</span>
-                <button
-                  className="text-gray-500 hover:text-gray-700 underline-offset-2 hover:underline cursor-pointer inline-flex items-center gap-1"
-                >
-                  <Download className="h-3 w-3" />
-                  Lataa PDF
-                </button>
-                <span className="text-gray-300">·</span>
-                <button
-                  className="text-red-500 hover:text-red-700 underline-offset-2 hover:underline cursor-pointer"
-                  onClick={() => setShowConfirmReject(true)}
-                >
-                  Hylkää tarjous
-                </button>
-              </div>
+                </Button>
+              ) : (
+                <div className="space-y-2 rounded-lg border border-gray-200 p-3">
+                  <Textarea
+                    value={changeComment}
+                    onChange={(e) => setChangeComment(e.target.value)}
+                    placeholder="Kerro mitä haluat muuttaa..."
+                    rows={3}
+                    autoFocus
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      disabled={!changeComment.trim()}
+                      onClick={() => {
+                        const updated = (workOrder.proposalSections ?? []).map((p) =>
+                          p.status === "sent" ? { ...p, status: "changes_requested" as const, clientComment: changeComment } : p
+                        )
+                        updateWorkOrder(workOrderId, { proposalSections: updated })
+                        setShowChangeForm(false)
+                        setChangeComment("")
+                      }}
+                    >
+                      Lähetä
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => { setShowChangeForm(false); setChangeComment("") }}>
+                      Peruuta
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              <button
+                className="flex w-full items-center justify-center gap-1 text-[12px] text-red-500 hover:text-red-700 underline-offset-2 hover:underline cursor-pointer pt-1"
+                onClick={() => setShowConfirmReject(true)}
+              >
+                Hylkää
+              </button>
             </Card>
           )}
 
           {/* Reject confirmation */}
           {showConfirmReject && (
             <div className="rounded-xl border border-red-200 bg-red-50 p-5">
-              <p className="text-[14px] font-semibold text-red-800">Haluatko varmasti hylätä tarjouksen?</p>
-              <p className="text-[12px] text-red-600 mt-1">Tämä toiminto on lopullinen.</p>
+              <p className="text-[14px] font-semibold text-red-800">Haluatko varmasti hylätä ehdotuksen?</p>
+              <p className="text-[12px] text-red-600 mt-1">Optio poistuu ja tila vapautuu.</p>
               <div className="flex gap-2 mt-3">
                 <Button variant="outline" size="sm" onClick={() => setShowConfirmReject(false)}>Peruuta</Button>
                 <Button variant="destructive" size="sm" onClick={() => {

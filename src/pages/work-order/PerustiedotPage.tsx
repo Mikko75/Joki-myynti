@@ -294,7 +294,7 @@ function EditModal({ title, fields, onClose, onSave }: {
 
   return (
     <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-xl">
         <DialogTitle>{title}</DialogTitle>
         <DialogDescription className="sr-only">{title}</DialogDescription>
         <div className="space-y-3 mt-2">
@@ -332,7 +332,7 @@ function EditTextareaModal({ title, initial, onClose, onSave }: {
 
   return (
     <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-xl">
         <DialogTitle>{title}</DialogTitle>
         <DialogDescription className="sr-only">{title}</DialogDescription>
         <Textarea value={value} onChange={(e) => setValue(e.target.value)} rows={4} className="mt-2" />
@@ -381,7 +381,7 @@ function TapahtumaEditModal({ wo, onClose, onSave }: {
 
   return (
     <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-xl">
         <DialogTitle>Muokkaa tapahtuman tietoja</DialogTitle>
         <DialogDescription className="sr-only">Muokkaa tapahtuman tietoja</DialogDescription>
         <div className="space-y-3 mt-2">
@@ -465,7 +465,7 @@ function TarpeetEditModal({ wo, onClose, onSave }: {
 
   return (
     <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-xl">
         <DialogTitle>Muokkaa tarpeita</DialogTitle>
         <DialogDescription className="sr-only">Muokkaa tarpeita</DialogDescription>
         <div className="space-y-4 mt-2">

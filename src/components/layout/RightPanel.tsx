@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { X, Send, ChevronDown, ChevronUp, PanelRightClose, PanelRightOpen, CheckCircle2 } from "lucide-react"
+import { X, Send, ChevronDown, ChevronUp, PanelRightClose, PanelRightOpen, CheckCircle2, Clock, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useCurrentWorkOrder } from "@/hooks/useCurrentWorkOrder"
@@ -11,6 +11,21 @@ const PROPOSAL_META: Record<string, { label: string; badge: string }> = {
   sent: { label: "Asiakkaalla", badge: "bg-amber-100 text-amber-700" },
   approved: { label: "Hyväksytty", badge: "bg-emerald-100 text-emerald-700" },
   changes_requested: { label: "Muutoksia pyydetty", badge: "bg-red-100 text-red-700" },
+  expired: { label: "Vanhentunut", badge: "bg-gray-100 text-gray-500" },
+}
+
+function calcDefaultDeadline(eventDate?: string): string {
+  const now = new Date()
+  const event = eventDate ? new Date(eventDate) : null
+  let days = 14
+  if (event) {
+    const diff = (event.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+    if (diff > 180) days = 30
+    else if (diff >= 60) days = 14
+    else days = 7
+  }
+  const d = new Date(now.getTime() + days * 24 * 60 * 60 * 1000)
+  return d.toISOString().split("T")[0]
 }
 
 const SECTION_LABELS: Record<string, string> = {
@@ -33,6 +48,19 @@ export function RightPanel() {
   if (!workOrder) return null
 
   const wo = workOrder
+  const eventDate = wo.eventDays[0]?.date
+
+  // Check for expired proposals on render
+  const rawProposals = wo.proposalSections ?? []
+  const now = new Date()
+  const hasExpired = rawProposals.some((p) => p.status === "sent" && p.deadline && now > new Date(p.deadline))
+  if (hasExpired) {
+    const fixed = rawProposals.map((p) =>
+      p.status === "sent" && p.deadline && now > new Date(p.deadline) ? { ...p, status: "expired" as const } : p
+    )
+    updateWorkOrder(workOrderId, { proposalSections: fixed })
+  }
+
   const proposals = wo.proposalSections ?? []
   const hasDrafts = proposals.some((p) => p.status === "draft")
 
@@ -46,8 +74,12 @@ export function RightPanel() {
   }
 
   function sendProposal() {
-    const now = new Date().toLocaleString("fi-FI")
-    const updated = proposals.map((p) => p.status === "draft" ? { ...p, status: "sent" as const, sentAt: now } : p)
+    const nowStr = new Date().toLocaleString("fi-FI")
+    const updated = proposals.map((p) => {
+      if (p.status !== "draft") return p
+      const deadline = p.deadline ?? (p.sectionKey === "tilat" ? calcDefaultDeadline(eventDate) : undefined)
+      return { ...p, status: "sent" as const, sentAt: nowStr, deadline }
+    })
     updateWorkOrder(workOrderId, { proposalSections: updated, status: "asiakkaalla" })
   }
 
@@ -118,17 +150,28 @@ export function RightPanel() {
 
       {(() => {
         const approvedSections = proposals.filter((p) => p.status === "approved")
-        if (approvedSections.length === 0) return null
-        const names = approvedSections.map((p) =>
-          SECTION_LABELS[p.sectionKey] ?? wo.customSections?.find((s) => `custom-${s.id}` === p.sectionKey)?.title ?? p.sectionKey
-        ).join(", ")
+        const expiredSections = proposals.filter((p) => p.status === "expired")
         return (
-          <div className="flex items-start gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-3 mb-4">
-            <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-            <p className="text-[12px] font-semibold text-emerald-800">
-              Asiakas on hyväksynyt ehdotuksen: {names}
-            </p>
-          </div>
+          <>
+            {approvedSections.length > 0 && (
+              <div className="flex items-start gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-3 mb-4">
+                <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                <p className="text-[12px] font-semibold text-emerald-800">
+                  Asiakas on hyväksynyt ehdotuksen: {approvedSections.map((p) =>
+                    SECTION_LABELS[p.sectionKey] ?? wo.customSections?.find((s) => `custom-${s.id}` === p.sectionKey)?.title ?? p.sectionKey
+                  ).join(", ")}
+                </p>
+              </div>
+            )}
+            {expiredSections.length > 0 && (
+              <div className="flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 mb-4">
+                <Clock className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                <p className="text-[12px] font-semibold text-amber-800">
+                  Tilan optio on vanhentunut. Voit tehdä uuden ehdotuksen.
+                </p>
+              </div>
+            )}
+          </>
         )
       })()}
 
@@ -186,6 +229,52 @@ export function RightPanel() {
                         <span className="font-bold text-gray-900">{formatPrice(content.total)}</span>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* Deadline — draft-tilassa muokattava */}
+                {p.status === "draft" && p.sectionKey === "tilat" && (
+                  <div className="px-3 pb-2 border-t border-gray-100 pt-2">
+                    <label className="text-[10px] font-medium text-gray-500 flex items-center gap-1">
+                      <Clock className="h-3 w-3" /> Option voimassaolo
+                    </label>
+                    <input
+                      type="date"
+                      value={p.deadline ?? calcDefaultDeadline(eventDate)}
+                      onChange={(e) => {
+                        const updated = proposals.map((pr) =>
+                          pr.sectionKey === p.sectionKey ? { ...pr, deadline: e.target.value } : pr
+                        )
+                        updateWorkOrder(workOrderId, { proposalSections: updated })
+                      }}
+                      className="mt-1 w-full rounded border border-gray-200 px-2 py-1 text-[11px] text-gray-700"
+                    />
+                  </div>
+                )}
+
+                {/* Deadline — sent-tilassa näytetään */}
+                {p.status === "sent" && p.deadline && (
+                  <div className="px-3 pb-2 flex items-center gap-1.5 text-[10px] text-amber-600">
+                    <Clock className="h-3 w-3" />
+                    Voimassa {new Date(p.deadline).toLocaleDateString("fi-FI")} asti
+                  </div>
+                )}
+
+                {/* Expired — nappi uuteen ehdotukseen */}
+                {p.status === "expired" && (
+                  <div className="px-3 pb-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        const updated = proposals.map((pr) =>
+                          pr.sectionKey === p.sectionKey ? { ...pr, status: "draft" as const, deadline: undefined, sentAt: null, clientComment: undefined } : pr
+                        )
+                        updateWorkOrder(workOrderId, { proposalSections: updated })
+                      }}
+                      className="flex items-center gap-1 text-[10px] text-blue-600 hover:text-blue-800"
+                    >
+                      <RotateCcw className="h-3 w-3" /> Tee uusi ehdotus
+                    </button>
                   </div>
                 )}
 

@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom"
 import { WorkOrderHeader } from "@/components/layout/WorkOrderHeader"
 import { WorkOrderSectionCard } from "@/components/common/WorkOrderSectionCard"
 import { useCurrentWorkOrder } from "@/hooks/useCurrentWorkOrder"
@@ -6,7 +7,7 @@ import { useTeam } from "@/context/TeamContext"
 import { InfoBanner } from "@/components/common/InfoBanner"
 import { SectionChat } from "@/components/common/SectionChat"
 import { useState, useRef, useEffect } from "react"
-import { Plus, Info, CheckCircle2, Music, ShieldCheck, Signpost, Armchair, Truck, Users, CarFront, Hotel, FileCheck, Handshake, Star, MoreHorizontal } from "lucide-react"
+import { Plus, Info, CheckCircle2, Music, ShieldCheck, Signpost, Armchair, Truck, Users, CarFront, Hotel, FileCheck, Handshake, Star, MoreHorizontal, User, Calendar, Clock, Utensils, Volume2 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import type { SectionStatus, ProposalSection, CustomSection } from "@/data/types"
 
@@ -36,6 +37,7 @@ const PROPOSAL_STATUS_META: Record<string, { label: string; badge: string }> = {
   sent: { label: "Asiakkaalla", badge: "bg-amber-100 text-amber-700" },
   approved: { label: "Hyväksytty", badge: "bg-emerald-100 text-emerald-700" },
   changes_requested: { label: "Muutoksia pyydetty", badge: "bg-red-100 text-red-700" },
+  expired: { label: "Vanhentunut", badge: "bg-gray-100 text-gray-500" },
 }
 
 export default function OverviewPage() {
@@ -109,9 +111,6 @@ export default function OverviewPage() {
     setAddNewOpen(false)
   }
 
-  const hasBasicInfo = Boolean(wo.customerName && wo.eventType && wo.eventDays.length > 0)
-  const perustiedotStatus = hasBasicInfo ? SECTION_STATUS_META["valmis"] : wo.customerCompany ? SECTION_STATUS_META["kaynnissa"] : SECTION_STATUS_META["ei_aloitettu"]
-
   const sections = [
     { key: "tilat", title: "Tilat", subtitle: `${allSpaces.length} tilaa valittu`, description: allSpaces.length > 0 ? allSpaces.map((s) => s.spaceName).join(", ") : "Ei aloitettu.", badgeLabel: tila.label, badgeClass: tila.badge, progress: tila.progress },
     { key: "aikataulu", title: "Aikataulu", subtitle: `${allScheduleItems.length} ohjelmakohtaa`, description: allScheduleItems.length > 0 ? allScheduleItems.map((i) => i.title).slice(0, 3).join(", ") : "Ei aloitettu.", badgeLabel: aikataulu.label, badgeClass: aikataulu.badge, progress: aikataulu.progress },
@@ -150,16 +149,50 @@ export default function OverviewPage() {
       </div>
 
       <div className="space-y-5">
-        <WorkOrderSectionCard
-          to={`${base}/perustiedot`}
-          title="Perustiedot"
-          subtitle={`${wo.customerCompany} · ${wo.eventType}`}
-          badgeLabel={perustiedotStatus.label}
-          badgeClassName={perustiedotStatus.badge}
-          progress={perustiedotStatus.progress}
-          description={`Yhteyshenkilö: ${wo.customerName || "–"} · Osallistujat: ${wo.participantEstimate} hlö · Päivämäärä: ${eventDate || "–"}`}
-          dateLabel={eventDate}
-        />
+        {/* Perustiedot — ikonillinen grid */}
+        {(() => {
+          const day = wo.eventDays[0]
+          const infoItems = [
+            { icon: User, label: "Yhteyshenkilö", value: wo.customerName || "–" },
+            { icon: Users, label: "Osallistujat", value: `${wo.participantEstimate} hlö` },
+            { icon: Calendar, label: "Päivämäärä", value: eventDate || "–" },
+            { icon: Clock, label: "Kellonaika", value: day ? `${day.bookingStart} – ${day.bookingEnd}` : "–" },
+            { icon: Star, label: "Tapahtumatyyppi", value: wo.eventType || "–" },
+            { icon: Utensils, label: "Tarvitaanko catering", value: wo.needsCatering === "yes" ? "Kyllä" : wo.needsCatering === "no" ? "Ei" : "–" },
+            { icon: Volume2, label: "Tarvitaanko AV", value: wo.needsAV === "yes" ? "Kyllä" : wo.needsAV === "no" ? "Ei" : "–" },
+          ]
+          return (
+            <Link
+              to={`${base}/perustiedot`}
+              className="block rounded-xl border border-gray-200 bg-white p-5 no-underline hover:shadow-md hover:border-gray-300 transition-all"
+            >
+              <div className="mb-4">
+                <h3 className="text-lg font-bold text-gray-900">{wo.customerCompany}</h3>
+                {wo.eventDescription && (
+                  <p className="mt-1 text-[13px] text-gray-600 leading-relaxed">{wo.eventDescription}</p>
+                )}
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {infoItems.map((item) => {
+                  const Icon = item.icon
+                  return (
+                    <div key={item.label} className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 shrink-0">
+                        <Icon className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[11px] text-gray-500">{item.label}</p>
+                        <p className="text-[13px] font-semibold text-gray-900 truncate">{item.value}</p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </Link>
+          )
+        })()}
+
+        <h2 className="text-lg font-bold text-gray-900">Osiot</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {sections.map((s) => {
