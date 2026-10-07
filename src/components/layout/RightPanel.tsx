@@ -1,9 +1,11 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useLocation } from "react-router-dom"
 import { X, Send, ChevronDown, ChevronUp, PanelRightClose, PanelRightOpen, CheckCircle2, Clock, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useCurrentWorkOrder } from "@/hooks/useCurrentWorkOrder"
 import { useWorkOrders } from "@/context/WorkOrderContext"
+import { useMode } from "@/context/ModeContext"
 import { cn } from "@/lib/utils"
 
 const PROPOSAL_META: Record<string, { label: string; badge: string }> = {
@@ -41,7 +43,14 @@ function formatPrice(v: number) {
 
 export function RightPanel() {
   const { workOrder, workOrderId } = useCurrentWorkOrder()
-  const { getCateringPlan, getAVPlan, updateWorkOrder } = useWorkOrders()
+  const { getCateringPlan, updateCateringPlan, getAVPlan, updateWorkOrder } = useWorkOrders()
+  const location = useLocation()
+  const lastSegment = location.pathname.split("/").pop() ?? ""
+  const { mode } = useMode()
+  const isSeller = mode === "seller"
+  const isCatering = lastSegment === "catering"
+  const isCateringSeller = isCatering && isSeller
+  const isCateringPartner = isCatering && !isSeller
   const [isOpen, setIsOpen] = useState(true)
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({})
 
@@ -50,18 +59,23 @@ export function RightPanel() {
   const wo = workOrder
   const eventDate = wo.eventDays[0]?.date
 
-  // Check for expired proposals on render
-  const rawProposals = wo.proposalSections ?? []
-  const now = new Date()
-  const hasExpired = rawProposals.some((p) => p.status === "sent" && p.deadline && now > new Date(p.deadline))
-  if (hasExpired) {
-    const fixed = rawProposals.map((p) =>
-      p.status === "sent" && p.deadline && now > new Date(p.deadline) ? { ...p, status: "expired" as const } : p
-    )
-    updateWorkOrder(workOrderId, { proposalSections: fixed })
-  }
+  // Check for expired proposals
+  useEffect(() => {
+    const rawProposals = wo.proposalSections ?? []
+    const now = new Date()
+    const hasExpired = rawProposals.some((p) => p.status === "sent" && p.deadline && now > new Date(p.deadline))
+    if (hasExpired) {
+      const fixed = rawProposals.map((p) =>
+        p.status === "sent" && p.deadline && now > new Date(p.deadline) ? { ...p, status: "expired" as const } : p
+      )
+      updateWorkOrder(workOrderId, { proposalSections: fixed })
+    }
+  }, [wo.proposalSections, workOrderId, updateWorkOrder])
 
-  const proposals = wo.proposalSections ?? []
+  const allProposals = wo.proposalSections ?? []
+  const proposals = isCatering
+    ? allProposals.filter((p) => p.sectionKey.startsWith("catering-"))
+    : allProposals.filter((p) => !p.sectionKey.startsWith("catering-"))
   const hasDrafts = proposals.some((p) => p.status === "draft")
 
   const cateringPlan = getCateringPlan(workOrderId)
@@ -70,17 +84,26 @@ export function RightPanel() {
   const allScheduleItems = wo.eventDays.flatMap((d) => d.scheduleItems)
 
   function removeFromProposal(key: string) {
-    updateWorkOrder(workOrderId, { proposalSections: proposals.filter((p) => p.sectionKey !== key) })
+    updateWorkOrder(workOrderId, { proposalSections: allProposals.filter((p) => p.sectionKey !== key) })
   }
 
   function sendProposal() {
     const nowStr = new Date().toLocaleString("fi-FI")
-    const updated = proposals.map((p) => {
-      if (p.status !== "draft") return p
+    const sentKeys = new Set(proposals.filter((p) => p.status === "draft").map((p) => p.sectionKey))
+    const updated = allProposals.map((p) => {
+      if (!sentKeys.has(p.sectionKey)) return p
       const deadline = p.deadline ?? (p.sectionKey === "tilat" ? calcDefaultDeadline(eventDate) : undefined)
       return { ...p, status: "sent" as const, sentAt: nowStr, deadline }
     })
-    updateWorkOrder(workOrderId, { proposalSections: updated, status: "asiakkaalla" })
+    if (isCateringSeller) {
+      updateWorkOrder(workOrderId, { proposalSections: updated })
+      updateCateringPlan(workOrderId, { status: "kumppanilla" })
+    } else if (isCateringPartner) {
+      updateWorkOrder(workOrderId, { proposalSections: updated })
+      updateCateringPlan(workOrderId, { status: "vastattu" })
+    } else {
+      updateWorkOrder(workOrderId, { proposalSections: updated, status: "asiakkaalla" })
+    }
   }
 
   function toggleCard(key: string) {
@@ -104,6 +127,13 @@ export function RightPanel() {
           total: cateringPlan.moments.reduce((sum, m) => sum + m.price, 0),
         }
       case "lisapalvelut": {
+        const avProd = wo.avProduction
+        if (avProd && (avProd.status === "valmis" || avProd.status === "vastattu")) {
+          const lines = avProd.productionAreas
+            .filter((a) => a.status !== "ei_tarvita")
+            .map((a) => ({ label: a.label, value: a.price ? `${a.price.toLocaleString("fi-FI")} €` : "–" }))
+          return { lines, total: avProd.totalPrice }
+        }
         const avLines: { label: string; value: string }[] = []
         if (avPlan.microphones) avLines.push({ label: "Mikrofonit", value: avPlan.microphones })
         if (avPlan.audio) avLines.push({ label: "Äänentoisto", value: avPlan.audio })
@@ -114,6 +144,16 @@ export function RightPanel() {
         }
       }
       default: {
+        if (key.startsWith("catering-")) {
+          const momentId = key.replace("catering-", "")
+          const moment = cateringPlan.moments.find((m) => m.id === momentId)
+          if (moment) {
+            const lines: { label: string; value: string }[] = []
+            if (moment.menuName) lines.push({ label: "Menu", value: moment.menuName })
+            if (moment.spaceName) lines.push({ label: "Tila", value: moment.spaceName })
+            return { lines, total: moment.price > 0 ? moment.price : undefined }
+          }
+        }
         if (key.startsWith("custom-")) {
           const cs = wo.customSections?.find((s) => `custom-${s.id}` === key)
           if (cs) {
@@ -140,13 +180,17 @@ export function RightPanel() {
   return (
     <aside className="hidden lg:flex w-80 shrink-0 flex-col overflow-y-auto border-l border-gray-200 p-5" style={{ backgroundColor: "#F8FAFC" }}>
       <div className="flex items-center justify-between">
-        <h3 className="text-[15px] font-semibold text-gray-900">Ehdotus asiakkaalle</h3>
+        <h3 className="text-[15px] font-semibold text-gray-900">
+          {isCateringSeller ? "Ehdotus kumppanille" : isCateringPartner ? (hasDrafts ? "Ehdotus myyjälle" : "Myyjältä saatu") : "Ehdotus asiakkaalle"}
+        </h3>
         <button onClick={() => setIsOpen(false)} className="p-1 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100 transition-colors" title="Sulje">
           <PanelRightClose className="h-4 w-4" />
         </button>
       </div>
 
-      <p className="text-[11px] text-gray-400 mt-1 mb-4">Lisää osioita kortteista (+) ja lähetä ehdotus.</p>
+      <p className="text-[11px] text-gray-400 mt-1 mb-4">
+        {isCateringSeller ? "Lisää tarjoiluhetkiä (+) ja lähetä kumppanille." : isCateringPartner ? (hasDrafts ? "Muokkaa ja lähetä takaisin myyjälle." : "Myyjän lähettämä catering-pyyntö.") : "Lisää osioita kortteista (+) ja lähetä ehdotus."}
+      </p>
 
       {(() => {
         const approvedSections = proposals.filter((p) => p.status === "approved")
@@ -158,7 +202,10 @@ export function RightPanel() {
                 <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
                 <p className="text-[12px] font-semibold text-emerald-800">
                   Asiakas on hyväksynyt ehdotuksen: {approvedSections.map((p) =>
-                    SECTION_LABELS[p.sectionKey] ?? wo.customSections?.find((s) => `custom-${s.id}` === p.sectionKey)?.title ?? p.sectionKey
+                    SECTION_LABELS[p.sectionKey]
+                    ?? (p.sectionKey.startsWith("catering-") ? cateringPlan.moments.find((m) => m.id === p.sectionKey.replace("catering-", ""))?.title ?? "Catering" : null)
+                    ?? wo.customSections?.find((s) => `custom-${s.id}` === p.sectionKey)?.title
+                    ?? p.sectionKey
                   ).join(", ")}
                 </p>
               </div>
@@ -198,9 +245,13 @@ export function RightPanel() {
                         : <ChevronDown className="h-3.5 w-3.5 text-gray-400 shrink-0" />
                     )}
                     <span className="text-[12px] font-medium text-gray-900">
-                      {SECTION_LABELS[p.sectionKey] ?? wo.customSections?.find((s) => `custom-${s.id}` === p.sectionKey)?.title ?? p.sectionKey}
+                      {SECTION_LABELS[p.sectionKey]
+                        ?? (p.sectionKey.startsWith("catering-") ? cateringPlan.moments.find((m) => m.id === p.sectionKey.replace("catering-", ""))?.title ?? "Catering"
+                        : wo.customSections?.find((s) => `custom-${s.id}` === p.sectionKey)?.title ?? p.sectionKey)}
                     </span>
-                    <Badge className={cn("text-[9px] px-1.5 py-0", meta.badge)}>{meta.label}</Badge>
+                    <Badge className={cn("text-[9px] px-1.5 py-0", meta.badge)}>
+                      {isCatering && p.status === "sent" ? "Lähetetty" : meta.label}
+                    </Badge>
                   </div>
                   {p.status === "draft" && (
                     <span
@@ -302,7 +353,9 @@ export function RightPanel() {
           onClick={sendProposal}
         >
           <Send className="h-3.5 w-3.5" />
-          {hasDrafts ? "Lähetä ehdotus" : "Ehdotus lähetetty"}
+          {hasDrafts
+            ? (isCateringSeller ? "Lähetä kumppanille" : isCateringPartner ? "Lähetä myyjälle" : "Lähetä ehdotus")
+            : (isCatering ? "Lähetetty" : "Ehdotus lähetetty")}
         </Button>
       )}
 

@@ -79,12 +79,13 @@ export default function OverviewPage() {
   const cateringMeta = SECTION_STATUS_META[wo.sectionStatuses.catering]
   const av = SECTION_STATUS_META[wo.sectionStatuses.av]
   const aikataulu = SECTION_STATUS_META[scheduleStatus]
+  const avNeeds = wo.avProduction?.needs ?? []
 
   const sectionHasData: Record<string, boolean> = {
     tilat: allSpaces.length > 0,
     aikataulu: allScheduleItems.length > 0,
     catering: cateringPlan.moments.length > 0,
-    lisapalvelut: Boolean(avPlan.microphones || avPlan.audio || avPlan.screens || (avPlan.price ?? 0) > 0),
+    lisapalvelut: wo.avProduction?.status === "valmis" || avNeeds.length > 0 || Boolean(avPlan.microphones || avPlan.audio || avPlan.screens || (avPlan.price ?? 0) > 0),
     ...Object.fromEntries(customSections.map((cs) => [`custom-${cs.id}`, cs.description.length > 0])),
   }
 
@@ -105,7 +106,7 @@ export default function OverviewPage() {
       type,
       title: label,
       description: "",
-      showToClient: false,
+      showToClient: true,
     }
     updateWorkOrder(workOrderId, { customSections: [...customSections, newSection] })
     setAddNewOpen(false)
@@ -115,7 +116,7 @@ export default function OverviewPage() {
     { key: "tilat", title: "Tilat", subtitle: `${allSpaces.length} tilaa valittu`, description: allSpaces.length > 0 ? allSpaces.map((s) => s.spaceName).join(", ") : "Ei aloitettu.", badgeLabel: tila.label, badgeClass: tila.badge, progress: tila.progress },
     { key: "aikataulu", title: "Aikataulu", subtitle: `${allScheduleItems.length} ohjelmakohtaa`, description: allScheduleItems.length > 0 ? allScheduleItems.map((i) => i.title).slice(0, 3).join(", ") : "Ei aloitettu.", badgeLabel: aikataulu.label, badgeClass: aikataulu.badge, progress: aikataulu.progress },
     { key: "catering", title: "Catering", subtitle: `${cateringPlan.moments.length} tarjoiluhetkeä`, description: cateringPlan.servingArea ? `Toimittaja: ${cateringPlan.servingArea}` : "Ei aloitettu.", badgeLabel: cateringMeta.label, badgeClass: cateringMeta.badge, progress: cateringMeta.progress },
-    { key: "lisapalvelut", title: "Lisäpalvelut & AV", subtitle: "AV-tekniikka ja lisäpalvelut", description: [avPlan.microphones, avPlan.audio, avPlan.screens].filter(Boolean).join(" · ") || "Ei aloitettu.", badgeLabel: av.label, badgeClass: av.badge, progress: av.progress },
+    { key: "lisapalvelut", title: "Lisäpalvelut & AV", subtitle: avNeeds.length > 0 ? `${avNeeds.length} AV-tarvetta tunnistettu` : "AV-tekniikka ja lisäpalvelut", description: avNeeds.length > 0 ? avNeeds.map((n) => n.label).join(", ") : "Ei aloitettu.", badgeLabel: av.label, badgeClass: av.badge, progress: av.progress },
   ]
 
   return (
@@ -259,7 +260,7 @@ export default function OverviewPage() {
                   description={cs.description || "Ei aloitettu."}
                   dateLabel={eventDate}
                 />
-                {cs.showToClient && !inProposal && (
+                {!inProposal && (
                   <div className="absolute top-4 right-4 z-10">
                     {emptyWarning === csKey && (
                       <div className="absolute bottom-full right-0 mb-1.5 w-56 flex items-start gap-3 rounded-md border-l-4 border-amber-500 bg-amber-50 p-4 shadow-sm">

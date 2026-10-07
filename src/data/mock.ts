@@ -531,6 +531,7 @@ export const menus: Menu[] = [
     partnerId: 'partner-1',
     name: 'Aamukahvimenu',
     description: 'Klassinen aamukahvitarjoilu',
+    category: 'Kahvitarjoilu',
     pricePerPerson: 8.50,
     status: 'aktiivinen',
     products: [
@@ -545,6 +546,7 @@ export const menus: Menu[] = [
     partnerId: 'partner-1',
     name: 'Seminaarilounas',
     description: 'Monipuolinen lounastarjoilu',
+    category: 'Lounas',
     pricePerPerson: 24.00,
     status: 'aktiivinen',
     products: [
@@ -560,6 +562,7 @@ export const menus: Menu[] = [
     partnerId: 'partner-1',
     name: 'Iltapäiväkahvimenu',
     description: 'Iltapäivän kahvitarjoilu',
+    category: 'Kahvitarjoilu',
     pricePerPerson: 6.50,
     status: 'aktiivinen',
     products: [
@@ -588,6 +591,7 @@ export const unicaMenus: Menu[] = [
     partnerId: 'partner-2',
     name: 'Unica Aamupalabuffet',
     description: 'Monipuolinen aamiaisbuffet',
+    category: 'Aamiainen',
     pricePerPerson: 12.00,
     status: 'aktiivinen',
     products: [
@@ -602,6 +606,7 @@ export const unicaMenus: Menu[] = [
     partnerId: 'partner-2',
     name: 'Unica Business Lunch',
     description: 'Kolmen ruokalajin bisneslounas',
+    category: 'Lounas',
     pricePerPerson: 32.00,
     status: 'aktiivinen',
     products: [
@@ -616,6 +621,7 @@ export const unicaMenus: Menu[] = [
     partnerId: 'partner-2',
     name: 'Unica Cocktail',
     description: 'Cocktail-tilaisuuden tarjoilu',
+    category: 'Cocktail / iltatilaisuus',
     pricePerPerson: 28.00,
     status: 'aktiivinen',
     products: [

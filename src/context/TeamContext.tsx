@@ -43,7 +43,30 @@ interface TeamContextValue {
 const TeamContext = createContext<TeamContextValue | null>(null)
 
 export function TeamProvider({ children }: { children: ReactNode }) {
-  const [members, setMembers] = useState<TeamMember[]>([])
+  const [members, setMembers] = useState<TeamMember[]>([
+    {
+      id: "partner-catering",
+      name: "Mauno Catering",
+      email: "info@maunocatering.fi",
+      role: "Catering",
+      initials: "MC",
+      color: "#22c55e",
+      permission: "edit",
+      sections: ["Catering"],
+      seeSchedule: true,
+    },
+    {
+      id: "partner-av",
+      name: "Rajupaja Oy",
+      email: "info@rajupaja.fi",
+      role: "AV-tuotanto",
+      initials: "RP",
+      color: "#8b5cf6",
+      permission: "edit",
+      sections: ["AV / tekniikka"],
+      seeSchedule: true,
+    },
+  ])
 
   const addMember = useCallback((member: Omit<TeamMember, "id">) => {
     const id = `tm-${Date.now()}`

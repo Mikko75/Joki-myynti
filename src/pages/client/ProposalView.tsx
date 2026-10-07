@@ -61,10 +61,27 @@ export default function ProposalView({ workOrderId }: { workOrderId: string }) {
     switch (key) {
       case "tilat": return allSpaces.length > 0 ? allSpaces.map((s) => `${s.spaceName} — ${s.price?.toLocaleString("fi-FI")} €`).join(", ") : "Ei valittuja tiloja."
       case "catering": return cateringPlan.moments.length > 0 ? cateringPlan.moments.map((m) => `${m.title} (${m.startTime}–${m.endTime})`).join(", ") : "Ei catering-hetkiä."
-      case "av": return [avPlan.microphones, avPlan.audio, avPlan.screens].filter(Boolean).join(" · ") || "Ei AV-valintoja."
+      case "av": {
+        const avProd = wo.avProduction
+        if (avProd && (avProd.status === "valmis" || avProd.status === "vastattu")) {
+          const areas = avProd.productionAreas.filter((a) => a.status !== "ei_tarvita")
+          const parts = areas.map((a) => a.label)
+          if (avProd.totalPrice > 0) parts.push(`${avProd.totalPrice.toLocaleString("fi-FI")} €`)
+          return parts.join(" · ") || "AV-tuotanto"
+        }
+        return [avPlan.microphones, avPlan.audio, avPlan.screens].filter(Boolean).join(" · ") || "Ei AV-valintoja."
+      }
       case "lisapalvelut": {
+        const parts: string[] = []
+        const avProd = wo.avProduction
+        if (avProd && (avProd.status === "valmis" || avProd.status === "vastattu")) {
+          const areas = avProd.productionAreas.filter((a) => a.status !== "ei_tarvita")
+          parts.push(...areas.map((a) => a.label))
+          if (avProd.totalPrice > 0) parts.push(`AV ${avProd.totalPrice.toLocaleString("fi-FI")} €`)
+        }
         const addOns = wo.selectedAddOns ?? []
-        return addOns.length > 0 ? `${addOns.length} lisäpalvelua valittu` : "Ei lisäpalveluita."
+        if (addOns.length > 0) parts.push(`${addOns.length} lisäpalvelua`)
+        return parts.length > 0 ? parts.join(" · ") : "Ei lisäpalveluita."
       }
       case "aikataulu": {
         const items = wo.eventDays.flatMap((d) => d.scheduleItems)

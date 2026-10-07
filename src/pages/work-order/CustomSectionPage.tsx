@@ -85,25 +85,6 @@ export default function CustomSectionPage() {
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-[13px] font-medium text-gray-700">Näytetäänkö asiakkaalle</label>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant={section.showToClient ? "default" : "outline"}
-                onClick={() => update("showToClient", true)}
-              >
-                Kyllä
-              </Button>
-              <Button
-                size="sm"
-                variant={!section.showToClient ? "default" : "outline"}
-                onClick={() => update("showToClient", false)}
-              >
-                Ei
-              </Button>
-            </div>
-          </div>
         </div>
       </Card>
 
@@ -137,7 +118,14 @@ export default function CustomSectionPage() {
         )}
       </Card>
 
-      <div className="pt-4 border-t border-gray-200">
+      <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+        <Button
+          onClick={() => navigate(`/tyomarain/${workOrderId}/yleiskuva`)}
+          disabled={!section.description.trim()}
+        >
+          Tallenna
+        </Button>
+
         {!showDeleteConfirm ? (
           <button
             onClick={() => setShowDeleteConfirm(true)}

@@ -1,14 +1,38 @@
 import { useMode, SELLER_MODE, CLIENT_MODE } from "@/context/ModeContext"
 import { useTeam } from "@/context/TeamContext"
+import { useNavigate, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
 
 export function ModeSwitcher() {
   const { mode, setMode, setModeInfo } = useMode()
   const { members } = useTeam()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const id = location.pathname.match(/\/tyomarain\/([^/]+)/)?.[1]
+
+  function goToDefault(newMode: string) {
+    if (!id) return
+    if (newMode === "client") {
+      navigate(`/tyomarain/${id}/ehdotus`)
+    } else if (newMode === "seller") {
+      navigate(`/tyomarain/${id}/yleiskuva`)
+    } else {
+      const member = members.find((m) => m.id === newMode)
+      if (member) {
+        const sectionMap: Record<string, string> = { "Catering": "catering", "AV / tekniikka": "av" }
+        const firstSection = member.sections[0]
+        const route = sectionMap[firstSection] ?? "yleiskuva"
+        navigate(`/tyomarain/${id}/${route}`)
+      } else {
+        navigate(`/tyomarain/${id}/yleiskuva`)
+      }
+    }
+  }
 
   function selectSeller() {
     setMode("seller")
     setModeInfo(SELLER_MODE)
+    goToDefault("seller")
   }
 
   function selectMember(m: typeof members[0]) {
@@ -21,11 +45,13 @@ export function ModeSwitcher() {
       initials: m.initials,
       color: m.color,
     })
+    goToDefault(m.id)
   }
 
   function selectClient() {
     setMode("client")
     setModeInfo(CLIENT_MODE)
+    goToDefault("client")
   }
 
   return (

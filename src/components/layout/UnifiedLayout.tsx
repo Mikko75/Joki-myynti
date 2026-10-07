@@ -284,7 +284,8 @@ export function UnifiedLayout() {
           <main className="flex-1 overflow-auto p-6 lg:p-8 bg-[rgba(249,250,251,0.8)]">
             <Outlet />
           </main>
-          {isSeller && lastSegment === "yleiskuva" && <RightPanel />}
+          {(isSeller && (lastSegment === "yleiskuva" || lastSegment === "catering")) && <RightPanel />}
+          {isPartner && (lastSegment === "yleiskuva" || lastSegment === "catering") && <RightPanel />}
         </div>
       </div>
     </div>

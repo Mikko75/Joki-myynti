@@ -5,13 +5,13 @@ import OverviewPage from "@/pages/work-order/OverviewPage"
 import SpacesPage from "@/pages/work-order/SpacesPage"
 import SchedulePage from "@/pages/work-order/SchedulePage"
 import CateringPage from "@/pages/work-order/CateringPage"
-import AVPage from "@/pages/work-order/AVPage"
+import AVProductionPage from "@/pages/work-order/AVProductionPage"
 import ServicesPage from "@/pages/work-order/ServicesPage"
 import ConversationsPage from "@/pages/work-order/ConversationsPage"
 import CustomerChatPage from "@/pages/work-order/CustomerChatPage"
 import OfferPage from "@/pages/work-order/OfferPage"
 import PartnerCateringPage from "@/pages/partner/PartnerCateringPage"
-import PartnerAVPage from "@/pages/partner/PartnerAVPage"
+import PartnerAVProductionPage from "@/pages/partner/PartnerAVProductionPage"
 import PartnerSchedulePage from "@/pages/partner/PartnerSchedulePage"
 import PartnerChatPage from "@/pages/partner/PartnerChatPage"
 import PartnerProductsPage from "@/pages/partner/PartnerProductsPage"
@@ -44,7 +44,7 @@ function CateringRouter() {
 
 function AVRouter() {
   const { mode } = useMode()
-  return mode === "seller" ? <AVPage /> : <PartnerAVPage />
+  return mode === "seller" ? <AVProductionPage /> : <PartnerAVProductionPage />
 }
 
 function ScheduleRouter() {

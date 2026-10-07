@@ -89,6 +89,7 @@ export interface WorkOrder {
   selectedAddOns?: { productId: string; quantity?: number }[]
   proposalSections?: ProposalSection[]
   customSections?: CustomSection[]
+  avProduction?: AVProduction
 }
 
 export interface ScheduleTemplateItem {
@@ -206,6 +207,15 @@ export interface CateringPlan {
   moments: CateringMoment[]
 }
 
+export interface ProposalProduct {
+  productId: string
+  name: string
+  unitPrice: number
+  unit: string
+  quantity: number
+  notes?: string
+}
+
 export interface CateringMoment {
   id: string
   title: string
@@ -216,6 +226,8 @@ export interface CateringMoment {
   menuName: string
   price: number
   status: string
+  notes?: string
+  proposalProducts?: ProposalProduct[]
 }
 
 export interface Menu {
@@ -223,6 +235,7 @@ export interface Menu {
   partnerId: string
   name: string
   description: string
+  category?: string
   pricePerPerson: number
   products: Product[]
   status: string
@@ -263,6 +276,56 @@ export interface AVPlan {
   streaming: string
   recording: string
   price: number
+}
+
+export type AVProductionStatus =
+  | "ei_aloitettu"
+  | "tarve_kuvattu"
+  | "kumppanilla"
+  | "vastattu"
+  | "valmis"
+
+export interface AVProductionNeed {
+  id: string
+  label: string
+  detected: boolean
+  notes?: string
+}
+
+export interface AVProductionArea {
+  key: string
+  label: string
+  status: "tarvitaan" | "luonnos" | "valmis" | "ei_tarvita"
+  description?: string
+  price?: number
+}
+
+export interface AVScheduleItem {
+  id: string
+  time: string
+  title: string
+  avNotes?: string
+}
+
+export interface AVProduction {
+  status: AVProductionStatus
+  needs: AVProductionNeed[]
+  productionAreas: AVProductionArea[]
+  partnerId?: string
+  partnerName?: string
+  partnerContact?: string
+  totalPrice: number
+  notes: string
+  sentToPartnerAt?: string
+  // Kumppanin täyttämät
+  technicalPlan?: string
+  crewCount?: number
+  crewNotes?: string
+  logisticsNotes?: string
+  powerRequirements?: string
+  safetyNotes?: string
+  buildSchedule?: AVScheduleItem[]
+  runOfShow?: AVScheduleItem[]
 }
 
 export interface Offer {
