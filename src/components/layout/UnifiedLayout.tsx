@@ -81,7 +81,6 @@ export function UnifiedLayout() {
       sectionKeys.push("tuotteet")
     }
     navItems = [
-      { id: "yleiskuva", label: "Yleiskuva", icon: LayoutDashboard },
       ...sectionKeys
         .map((key) => {
           const icon = sectionIcons[key]
@@ -275,17 +274,17 @@ export function UnifiedLayout() {
       <div className="flex flex-1 flex-col min-w-0">
         <TopBar
           breadcrumbs={[
-            isPartner ? modeInfo.role : isClient ? "Asiakasportaali" : "Työmääräin",
-            `${workOrder.number} • ${workOrder.customerCompany}`,
-            sectionLabel,
+            { label: isPartner ? modeInfo.role : isClient ? "Asiakasportaali" : "Työmääräin", to: "/" },
+            { label: `${workOrder.number} • ${workOrder.customerCompany}`, to: `/tyomarain/${id}/yleiskuva` },
+            { label: sectionLabel },
           ]}
         />
         <div className="flex flex-1 overflow-hidden">
           <main className="flex-1 overflow-auto p-6 lg:p-8 bg-[rgba(249,250,251,0.8)]">
             <Outlet />
           </main>
-          {(isSeller && (lastSegment === "yleiskuva" || lastSegment === "catering")) && <RightPanel />}
-          {isPartner && (lastSegment === "yleiskuva" || lastSegment === "catering") && <RightPanel />}
+          {(isSeller && (lastSegment === "yleiskuva" || lastSegment === "catering" || lastSegment === "av")) && <RightPanel />}
+          {isPartner && (lastSegment === "catering" || lastSegment === "av") && <RightPanel />}
         </div>
       </div>
     </div>

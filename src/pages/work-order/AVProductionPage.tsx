@@ -1,14 +1,17 @@
-import { Send, Music, ShieldCheck, Mic, Lightbulb, MonitorPlay, Construction, Radio, Users, Calendar, MapPin, Clock, RotateCcw, CheckCircle2, ClipboardList } from "lucide-react"
+import { useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { Plus, Sparkles, Music, Users, Calendar, MapPin, Clock, Send, ShieldCheck, RotateCcw, CheckCircle2, Mic, Lightbulb, MonitorPlay, Construction, Radio, ClipboardList } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { WorkOrderHeader } from "@/components/layout/WorkOrderHeader"
+import { WorkOrderSectionCard } from "@/components/common/WorkOrderSectionCard"
 import { SectionChat } from "@/components/common/SectionChat"
 import { useCurrentWorkOrder } from "@/hooks/useCurrentWorkOrder"
 import { useWorkOrders } from "@/context/WorkOrderContext"
-import type { AVProduction, ScheduleItem } from "@/data/types"
+import type { AVProduction, ProposalSection, ScheduleItem } from "@/data/types"
 import { cn } from "@/lib/utils"
 
 const STATUS_META: Record<string, { label: string; badge: string }> = {
@@ -36,6 +39,8 @@ const AREA_ICONS: Record<string, typeof Mic> = {
 export default function AVProductionPage() {
   const { workOrder, workOrderId } = useCurrentWorkOrder()
   const { updateWorkOrder, addScheduleItem } = useWorkOrders()
+  const navigate = useNavigate()
+  const [expandedCard, setExpandedCard] = useState(false)
 
   if (!workOrder) return <p className="text-gray-500">Työmääräintä ei löytynyt.</p>
 
@@ -48,15 +53,18 @@ export default function AVProductionPage() {
     notes: "",
   }
 
+  const proposals = wo.proposalSections ?? []
+  const proposalKeys = new Set(proposals.map((p) => p.sectionKey))
+  const avInProposal = proposalKeys.has("av")
+
   function updateAV(updates: Partial<AVProduction>) {
     updateWorkOrder(workOrderId, { avProduction: { ...av, ...updates } })
   }
 
-  function sendToPartner() {
-    updateAV({
-      status: "kumppanilla",
-      sentToPartnerAt: new Date().toLocaleString("fi-FI"),
-    })
+  function addAVToProposal() {
+    if (avInProposal) return
+    const entry: ProposalSection = { sectionKey: "av", sentAt: null, status: "draft" }
+    updateWorkOrder(workOrderId, { proposalSections: [...proposals, entry] })
   }
 
   function acceptPlan() {
@@ -79,10 +87,6 @@ export default function AVProductionPage() {
     }
   }
 
-  function requestChanges() {
-    updateAV({ status: "kumppanilla" })
-  }
-
   const day = wo.eventDays[0]
   const allSpaces = wo.eventDays.flatMap((d) => d.spaces)
   const meta = STATUS_META[av.status] ?? STATUS_META.ei_aloitettu
@@ -92,7 +96,7 @@ export default function AVProductionPage() {
     <div className="space-y-6">
       <WorkOrderHeader workOrder={wo} title="AV-tuotanto" />
 
-      {/* Tapahtuman tiedot */}
+      {/* Perustiedot */}
       <Card>
         <CardHeader>
           <CardTitle>Tapahtuman tiedot</CardTitle>
@@ -124,32 +128,59 @@ export default function AVProductionPage() {
             <Calendar className="h-4 w-4 text-gray-400" />
             <div>
               <p className="text-[11px] text-gray-500">Ajankohta</p>
-              <p className="text-[13px] font-medium text-gray-900">
-                {day ? `${day.date} · ${day.bookingStart}–${day.bookingEnd}` : "–"}
-              </p>
+              <p className="text-[13px] font-medium text-gray-900">{day ? `${day.date} · ${day.bookingStart}–${day.bookingEnd}` : "–"}</p>
             </div>
           </div>
         </div>
       </Card>
 
-      {/* --- ENNEN LÄHETYSTÄ --- */}
-      {(av.status === "ei_aloitettu" || av.status === "tarve_kuvattu") && (
-        <>
-          <Card>
-            <CardHeader><CardTitle>Kuvaa AV-tarve</CardTitle></CardHeader>
-            <Textarea
-              placeholder="Kerro vapaasti tapahtuman AV-tarpeista. Esim. tarvitaanko äänentoistoa, näyttöjä, striimausta, live-musiikkia, valaistusta..."
-              value={av.notes}
-              onChange={(e) => updateAV({ notes: e.target.value, status: av.status === "ei_aloitettu" ? "tarve_kuvattu" : av.status })}
-              rows={6}
-            />
-          </Card>
+      {/* AV-kortti — sama malli kuin CateringPage */}
+      <h2 className="text-lg font-bold text-gray-900">AV-pyyntö</h2>
 
-          <Card>
-            <CardHeader><CardTitle>AV-kumppani</CardTitle></CardHeader>
-            <div className="space-y-3">
+      <div className="relative">
+        <WorkOrderSectionCard
+          onClick={() => setExpandedCard(!expandedCard)}
+          title="AV-tuotanto"
+          subtitle={av.partnerName || "Ei kumppania valittu"}
+          badgeLabel={meta.label}
+          badgeClassName={meta.badge}
+          progress={0}
+          hideProgress
+          description={av.notes || "Klikkaa muokataksesi AV-kuvausta."}
+        />
+        {!avInProposal ? (
+          <div className="absolute top-4 right-4 z-10">
+            <button
+              onClick={addAVToProposal}
+              className="flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 hover:text-primary-600 hover:border-primary-300 transition-colors"
+              title="Lisää ehdotukseen"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        ) : (
+          <div className="absolute top-4 right-4 z-10">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" title="Ehdotuksessa">
+              <Sparkles className="h-3 w-3" />
+            </span>
+          </div>
+        )}
+
+        {/* Muokkaus — avautuu kortin alle */}
+        {expandedCard && (
+          <div className="rounded-b-xl border border-t-0 border-gray-200 bg-white p-4 -mt-1 space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-[12px] font-medium text-gray-600">Kuvaa AV-tarve</label>
+              <Textarea
+                placeholder="Kerro vapaasti tapahtuman AV-tarpeista..."
+                value={av.notes}
+                onChange={(e) => updateAV({ notes: e.target.value, status: av.status === "ei_aloitettu" ? "tarve_kuvattu" : av.status })}
+                rows={4}
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <label className="text-[13px] font-medium text-gray-700">Kumppani</label>
+                <label className="text-[12px] font-medium text-gray-600">Kumppani</label>
                 <select
                   value={av.partnerId ?? ""}
                   onChange={(e) => {
@@ -165,47 +196,30 @@ export default function AVProductionPage() {
                 </select>
               </div>
               <div className="space-y-1.5">
-                <label className="text-[13px] font-medium text-gray-700">Projektipäällikkö</label>
+                <label className="text-[12px] font-medium text-gray-600">Projektipäällikkö</label>
                 <Input
-                  placeholder="Nimi (täytetään myöhemmin)"
+                  placeholder="Nimi"
                   value={av.partnerContact ?? ""}
                   onChange={(e) => updateAV({ partnerContact: e.target.value })}
                   className="text-[13px]"
                 />
               </div>
-              {av.partnerId && (
-                <Button className="w-full gap-2" onClick={sendToPartner}>
-                  <Send className="h-4 w-4" />
-                  Lähetä kumppanille suunniteltavaksi
-                </Button>
-              )}
-            </div>
-          </Card>
-        </>
-      )}
-
-      {/* --- KUMPPANILLA --- */}
-      {av.status === "kumppanilla" && (
-        <>
-          <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
-            <Clock className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
-            <div>
-              <p className="text-[14px] font-semibold text-amber-800">Odottaa AV-kumppanin suunnitelmaa</p>
-              <p className="text-[12px] text-amber-700 mt-0.5">
-                Lähetetty {av.partnerName ?? "kumppanille"} {av.sentToPartnerAt}
-              </p>
             </div>
           </div>
-          {av.notes && (
-            <Card>
-              <CardHeader><CardTitle>Lähetetty kuvaus</CardTitle></CardHeader>
-              <p className="text-[13px] text-gray-700 whitespace-pre-wrap">{av.notes}</p>
-            </Card>
-          )}
-        </>
+        )}
+      </div>
+
+      {/* Status-bannerit */}
+      {av.status === "kumppanilla" && (
+        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <Clock className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-[14px] font-semibold text-amber-800">Odottaa AV-kumppanin suunnitelmaa</p>
+            <p className="text-[12px] text-amber-700 mt-0.5">Lähetetty {av.partnerName ?? "kumppanille"} {av.sentToPartnerAt}</p>
+          </div>
+        </div>
       )}
 
-      {/* --- KUMPPANI VASTANNUT --- */}
       {av.status === "vastattu" && (
         <>
           <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
@@ -216,14 +230,11 @@ export default function AVProductionPage() {
             </div>
           </div>
 
-          {/* Kumppanin suunnitelma read-only */}
           {activeAreas.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>Tuotantoalueet</CardTitle>
-                {av.totalPrice > 0 && (
-                  <span className="text-[14px] font-bold text-gray-900">{av.totalPrice.toLocaleString("fi-FI")} €</span>
-                )}
+                {av.totalPrice > 0 && <span className="text-[14px] font-bold text-gray-900">{av.totalPrice.toLocaleString("fi-FI")} €</span>}
               </CardHeader>
               <div className="space-y-3">
                 {activeAreas.map((area) => {
@@ -236,9 +247,7 @@ export default function AVProductionPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
                           <span className="text-[13px] font-semibold text-gray-900">{area.label}</span>
-                          {area.price != null && area.price > 0 && (
-                            <span className="text-[13px] font-bold text-gray-900">{area.price.toLocaleString("fi-FI")} €</span>
-                          )}
+                          {area.price != null && area.price > 0 && <span className="text-[13px] font-bold text-gray-900">{area.price.toLocaleString("fi-FI")} €</span>}
                         </div>
                         {area.description && <p className="mt-1 text-[12px] text-gray-600">{area.description}</p>}
                       </div>
@@ -251,12 +260,7 @@ export default function AVProductionPage() {
 
           {(av.runOfShow ?? []).length > 0 && (
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ClipboardList className="h-4 w-4 text-gray-400" />
-                  Tekninen aikataulu
-                </CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle className="flex items-center gap-2"><ClipboardList className="h-4 w-4 text-gray-400" />Tekninen aikataulu</CardTitle></CardHeader>
               <div className="space-y-1">
                 {(av.runOfShow ?? []).map((item) => (
                   <div key={item.id} className="flex items-center gap-3 py-2 border-b border-gray-100 last:border-0">
@@ -268,79 +272,60 @@ export default function AVProductionPage() {
             </Card>
           )}
 
-          {(av.crewCount || av.crewNotes) && (
-            <Card>
-              <CardHeader><CardTitle>Henkilöstö</CardTitle></CardHeader>
-              <div className="text-[13px] text-gray-700">
-                {av.crewCount && <p><span className="font-medium">Henkilöstömäärä:</span> {av.crewCount}</p>}
-                {av.crewNotes && <p className="mt-1">{av.crewNotes}</p>}
-              </div>
-            </Card>
-          )}
-
-          {av.technicalPlan && (
-            <Card>
-              <CardHeader><CardTitle>Tekninen suunnitelma</CardTitle></CardHeader>
-              <p className="text-[13px] text-gray-700 whitespace-pre-wrap">{av.technicalPlan}</p>
-            </Card>
-          )}
-
           <div className="flex gap-3">
             <Button className="flex-1 gap-2" size="lg" onClick={acceptPlan}>
-              <CheckCircle2 className="h-4.5 w-4.5" />
-              Hyväksy suunnitelma
+              <CheckCircle2 className="h-4.5 w-4.5" />Hyväksy suunnitelma
             </Button>
-            <Button variant="outline" className="flex-1 gap-2" size="lg" onClick={requestChanges}>
-              <RotateCcw className="h-4.5 w-4.5" />
-              Pyydä muutoksia
+            <Button variant="outline" className="flex-1 gap-2" size="lg" onClick={() => updateAV({ status: "kumppanilla" })}>
+              <RotateCcw className="h-4.5 w-4.5" />Pyydä muutoksia
             </Button>
           </div>
         </>
       )}
 
-      {/* --- HYVÄKSYTTY --- */}
-      {av.status === "valmis" && (
-        <>
-          <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-            <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
-            <div>
-              <p className="text-[14px] font-semibold text-emerald-800">AV-suunnitelma hyväksytty</p>
-              <p className="text-[12px] text-emerald-700 mt-0.5">{av.partnerName ?? "Kumppanin"} suunnitelma on valmis.</p>
-            </div>
-          </div>
-
-          {activeAreas.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Tuotantoalueet</CardTitle>
-                {av.totalPrice > 0 && (
-                  <span className="text-[14px] font-bold text-gray-900">{av.totalPrice.toLocaleString("fi-FI")} €</span>
-                )}
-              </CardHeader>
-              <div className="space-y-3">
-                {activeAreas.map((area) => {
-                  const Icon = AREA_ICONS[area.key] ?? Mic
-                  return (
-                    <div key={area.key} className="flex items-start gap-3 rounded-lg border border-gray-100 bg-gray-50 p-4">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 text-blue-600 shrink-0">
-                        <Icon className="h-4.5 w-4.5" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[13px] font-semibold text-gray-900">{area.label}</span>
-                          {area.price != null && area.price > 0 && (
-                            <span className="text-[13px] font-bold text-gray-900">{area.price.toLocaleString("fi-FI")} €</span>
-                          )}
-                        </div>
-                        {area.description && <p className="mt-1 text-[12px] text-gray-600">{area.description}</p>}
-                      </div>
+      {av.status === "valmis" && activeAreas.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Tuotantoalueet</CardTitle>
+            {av.totalPrice > 0 && <span className="text-[14px] font-bold text-gray-900">{av.totalPrice.toLocaleString("fi-FI")} €</span>}
+          </CardHeader>
+          <div className="space-y-3">
+            {activeAreas.map((area) => {
+              const Icon = AREA_ICONS[area.key] ?? Mic
+              return (
+                <div key={area.key} className="flex items-start gap-3 rounded-lg border border-gray-100 bg-gray-50 p-4">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 text-blue-600 shrink-0"><Icon className="h-4.5 w-4.5" /></div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[13px] font-semibold text-gray-900">{area.label}</span>
+                      {area.price != null && area.price > 0 && <span className="text-[13px] font-bold text-gray-900">{area.price.toLocaleString("fi-FI")} €</span>}
                     </div>
-                  )
-                })}
-              </div>
-            </Card>
-          )}
-        </>
+                    {area.description && <p className="mt-1 text-[12px] text-gray-600">{area.description}</p>}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </Card>
+      )}
+
+      {/* Lähetä suoraan asiakkaalle */}
+      {av.notes && (
+        <div className="flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50 p-5">
+          <div>
+            <p className="text-[14px] font-semibold text-gray-900">Lähetä suoraan asiakkaalle</p>
+            <p className="text-[12px] text-gray-500 mt-0.5">Lisää AV-osio suoraan asiakkaan ehdotukseen.</p>
+          </div>
+          <Button onClick={() => {
+            if (!proposalKeys.has("lisapalvelut")) {
+              const entry: ProposalSection = { sectionKey: "lisapalvelut", sentAt: null, status: "draft" }
+              updateWorkOrder(workOrderId, { proposalSections: [...proposals, entry] })
+            }
+            navigate(`/tyomarain/${workOrderId}/yleiskuva`)
+          }}>
+            Asiakkaalle
+          </Button>
+        </div>
       )}
 
       <SectionChat sectionKey="av" />

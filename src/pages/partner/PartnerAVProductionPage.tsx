@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Send, Plus, X, Mic, Lightbulb, MonitorPlay, Construction, Radio, Users, Calendar, MapPin, Music, Clock, Truck, ShieldCheck, Zap, ClipboardList } from "lucide-react"
+import { Send, Plus, X, Mic, Lightbulb, MonitorPlay, Construction, Radio, Users, Calendar, MapPin, Music, Clock, Truck, ShieldCheck, Zap, ClipboardList, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -8,7 +8,8 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { SectionChat } from "@/components/common/SectionChat"
 import { useParams } from "react-router-dom"
 import { useWorkOrders } from "@/context/WorkOrderContext"
-import type { AVProduction, AVProductionArea, AVScheduleItem } from "@/data/types"
+import { WorkOrderSectionCard } from "@/components/common/WorkOrderSectionCard"
+import type { AVProduction, AVProductionArea, AVScheduleItem, ProposalSection } from "@/data/types"
 import { cn } from "@/lib/utils"
 
 const DEFAULT_AREAS: AVProductionArea[] = [
@@ -33,8 +34,19 @@ export default function PartnerAVProductionPage() {
   const { getWorkOrder, updateWorkOrder } = useWorkOrders()
   const workOrder = getWorkOrder(woId)
   const [newRunItem, setNewRunItem] = useState({ time: "", title: "" })
+  const [expandedAreaKey, setExpandedAreaKey] = useState<string | null>(null)
 
   if (!workOrder) return <p className="text-gray-500">Ei löytynyt.</p>
+
+  const proposals = workOrder.proposalSections ?? []
+  const proposalKeys = new Set(proposals.map((p) => p.sectionKey))
+
+  function addAreaToProposal(areaKey: string) {
+    const key = `av-${areaKey}`
+    if (proposalKeys.has(key)) return
+    const entry: ProposalSection = { sectionKey: key, sentAt: null, status: "draft" }
+    updateWorkOrder(woId, { proposalSections: [...proposals, entry] })
+  }
 
   const wo = workOrder
   const av: AVProduction = wo.avProduction ?? {
@@ -166,60 +178,84 @@ export default function PartnerAVProductionPage() {
         </Card>
       )}
 
-      {/* 3. Tuotantoalueet — kumppani valitsee ja täyttää */}
-      <Card>
-        <CardHeader><CardTitle>Tuotantoalueet</CardTitle></CardHeader>
-        <div className="space-y-4">
-          {av.productionAreas.map((area) => {
-            const Icon = AREA_ICONS[area.key] ?? Mic
-            const isActive = area.status !== "ei_tarvita"
-            return (
-              <div key={area.key} className={cn(
-                "rounded-lg border p-4 transition-all",
-                isActive ? "border-blue-200 bg-blue-50/30" : "border-gray-200 bg-gray-50"
-              )}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2.5">
-                    <div className={cn("flex h-9 w-9 items-center justify-center rounded-full shrink-0", isActive ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-400")}>
-                      <Icon className="h-4.5 w-4.5" />
-                    </div>
-                    <span className="text-[14px] font-semibold text-gray-900">{area.label}</span>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant={isActive ? "default" : "outline"}
-                    onClick={() => updateArea(area.key, { status: isActive ? "ei_tarvita" : "tarvitaan" })}
+      {/* 3. Tuotantoalueet — WorkOrderSectionCard + +-nappi */}
+      <h2 className="text-lg font-bold text-gray-900">Tuotantoalueet</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {av.productionAreas.map((area) => {
+          const isActive = area.status !== "ei_tarvita"
+          const isOpen = expandedAreaKey === area.key
+          const inProposal = proposalKeys.has(`av-${area.key}`)
+
+          return (
+            <div key={area.key} className="relative">
+              <WorkOrderSectionCard
+                onClick={() => setExpandedAreaKey(isOpen ? null : area.key)}
+                title={area.label}
+                subtitle={area.price ? `${area.price.toLocaleString("fi-FI")} €` : undefined}
+                badgeLabel={isActive ? (area.description ? "Luonnos" : "Tarvitaan") : "Ei tarvita"}
+                badgeClassName={isActive ? (area.description ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700") : "bg-gray-100 text-gray-500"}
+                progress={area.description ? 100 : 0}
+                hideProgress
+                description={area.description || "Klikkaa muokataksesi."}
+              />
+              {isActive && !inProposal ? (
+                <div className="absolute top-4 right-4 z-10">
+                  <button
+                    onClick={() => addAreaToProposal(area.key)}
+                    className="flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 hover:text-primary-600 hover:border-primary-300 transition-colors"
+                    title="Lisää ehdotukseen"
                   >
-                    {isActive ? "Tarvitaan" : "Ei tarvita"}
-                  </Button>
+                    <Plus className="h-3.5 w-3.5" />
+                  </button>
                 </div>
-                {isActive && (
-                  <div className="space-y-3 mt-3">
-                    <div className="space-y-1.5">
-                      <label className="text-[12px] font-medium text-gray-600">Suunnitelma</label>
-                      <Textarea
-                        placeholder={`Kuvaa ${area.label.toLowerCase()}-toteutus: kalusto, sijoittelu, tekniset vaatimukset...`}
-                        value={area.description ?? ""}
-                        onChange={(e) => updateArea(area.key, { description: e.target.value })}
-                        rows={3}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[12px] font-medium text-gray-600">Hinta (€)</label>
-                      <Input
-                        type="number"
-                        placeholder="0"
-                        value={area.price ?? ""}
-                        onChange={(e) => updateArea(area.key, { price: e.target.value ? Number(e.target.value) : undefined })}
-                      />
-                    </div>
+              ) : isActive && inProposal ? (
+                <div className="absolute top-4 right-4 z-10">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" title="Ehdotuksessa">
+                    <Sparkles className="h-3 w-3" />
+                  </span>
+                </div>
+              ) : null}
+
+              {isOpen && (
+                <div className="rounded-b-xl border border-t-0 border-gray-200 bg-white p-4 -mt-1 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[13px] font-medium text-gray-700">{area.label}</span>
+                    <Button
+                      size="sm"
+                      variant={isActive ? "default" : "outline"}
+                      onClick={() => updateArea(area.key, { status: isActive ? "ei_tarvita" : "tarvitaan" })}
+                    >
+                      {isActive ? "Tarvitaan" : "Ei tarvita"}
+                    </Button>
                   </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      </Card>
+                  {isActive && (
+                    <>
+                      <div className="space-y-1.5">
+                        <label className="text-[12px] font-medium text-gray-600">Suunnitelma</label>
+                        <Textarea
+                          placeholder={`Kuvaa ${area.label.toLowerCase()}-toteutus...`}
+                          value={area.description ?? ""}
+                          onChange={(e) => updateArea(area.key, { description: e.target.value })}
+                          rows={3}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[12px] font-medium text-gray-600">Hinta (€)</label>
+                        <Input
+                          type="number"
+                          placeholder="0"
+                          value={area.price ?? ""}
+                          onChange={(e) => updateArea(area.key, { price: e.target.value ? Number(e.target.value) : undefined })}
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
 
       {/* 4. Tekninen käsikirjoitus / Run of Show */}
       <Card>
@@ -349,13 +385,7 @@ export default function PartnerAVProductionPage() {
         />
       </Card>
 
-      {/* Lähetä */}
-      {av.status === "kumppanilla" && (
-        <Button className="w-full gap-2" size="lg" onClick={sendPlan}>
-          <Send className="h-4 w-4" />
-          Lähetä suunnitelma myyjälle
-        </Button>
-      )}
+      {/* Lähetä — inline poistettu, RightPanel hoitaa */}
 
       {(av.status === "vastattu" || av.status === "valmis") && (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-center">

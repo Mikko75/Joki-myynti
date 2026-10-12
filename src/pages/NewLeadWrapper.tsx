@@ -2,7 +2,27 @@ import { useNavigate } from "react-router-dom"
 import NewLeadPage from "./NewLeadPage"
 import type { NewLeadFormData } from "./NewLeadPage"
 import { useWorkOrders } from "@/context/WorkOrderContext"
-import type { WorkOrder, EventSource } from "@/data/types"
+import type { WorkOrder, EventSource, ScheduleItem } from "@/data/types"
+
+function parseScheduleNotes(notes: string): ScheduleItem[] {
+  if (!notes.trim()) return []
+  return notes.split("\n").map((line, i) => {
+    const match = line.trim().match(/^(\d{1,2}[:.]\d{2})\s*[-–]?\s*(.+)/)
+    if (!match) return null
+    const time = match[1].replace(".", ":")
+    const title = match[2].trim()
+    return {
+      id: `si-client-${Date.now()}-${i}`,
+      type: "ohjelma" as const,
+      title,
+      startTime: time,
+      endTime: time,
+      spaceName: "",
+      status: "luonnos" as const,
+      sourceLabel: "Asiakas",
+    }
+  }).filter(Boolean) as ScheduleItem[]
+}
 
 const sourceMap: Record<string, EventSource> = {
   "web-lomake": "web",
@@ -57,6 +77,10 @@ export default function NewLeadWrapper() {
       eventDescription: data.eventDescription || undefined,
       needsCatering: data.needsCatering || undefined,
       needsAV: data.needsAV || undefined,
+      accessibilityNeeds: data.dietaryNeeds || undefined,
+      seatingStyle: (data.seatingStyle as WorkOrder["seatingStyle"]) || undefined,
+      budgetRange: (data.budgetRange as WorkOrder["budgetRange"]) || undefined,
+      vipGuests: data.vipGuests || undefined,
       eventDays: [
         ...(data.date ? [{
           id: `ed-${Date.now()}`,
@@ -70,7 +94,7 @@ export default function NewLeadWrapper() {
           doorsOpen: data.time || "09:00",
           guestsLeave: "17:00",
           spaces: [],
-          scheduleItems: [],
+          scheduleItems: parseScheduleNotes(data.scheduleNotes ?? ""),
         }] : []),
         ...(data.extraDates ?? []).filter(Boolean).map((d, i) => ({
           id: `ed-${Date.now()}-${i + 1}`,

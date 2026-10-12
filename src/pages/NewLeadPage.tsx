@@ -49,6 +49,11 @@ export interface NewLeadFormData {
   needsCatering: "yes" | "no" | "unknown"
   needsAV: "yes" | "no"
   responsible: string
+  dietaryNeeds?: string
+  seatingStyle?: string
+  budgetRange?: string
+  vipGuests?: string
+  scheduleNotes?: string
 }
 
 interface NewLeadPageProps {
@@ -172,6 +177,11 @@ export default function NewLeadPage({ onSubmit, onCancel }: NewLeadPageProps) {
     needsCatering: "yes",
     needsAV: "yes",
     responsible: "mikko-lesonen",
+    dietaryNeeds: "",
+    seatingStyle: "",
+    budgetRange: "",
+    vipGuests: "",
+    scheduleNotes: "",
   })
 
   function update<K extends keyof NewLeadFormData>(
@@ -250,7 +260,39 @@ export default function NewLeadPage({ onSubmit, onCancel }: NewLeadPageProps) {
       {/* ── Main content ───────────────────────────────────────────── */}
       <main className="mx-auto max-w-4xl px-6 py-8 pb-16">
         {/* Page title */}
-        <h1 className="mb-4 text-2xl font-bold text-gray-900">{isClient ? "Lähetä tapahtumapyyntö" : "Uusi liidi"}</h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold text-gray-900">{isClient ? "Lähetä tapahtumapyyntö" : "Uusi liidi"}</h1>
+          <button
+            type="button"
+            onClick={() => setFormData({
+              source: "web",
+              company: "Nordic Digital Oy",
+              contactPerson: "Mikko Lesonen",
+              email: "mikko@nordicdigital.fi",
+              phone: "+358 40 123 4567",
+              eventName: "TechVision Summit 2027",
+              eventDescription: "Vuotuinen teknologiakonferenssi. Päivällä seminaari ja workshopit, illalla gaala live-musiikilla. Striimataan etäosallistujille.",
+              date: "2027-11-13",
+              extraDates: [],
+              dateOpen: false,
+              time: "09:00",
+              participantEstimate: "450",
+              eventType: "conference",
+              duration: "single",
+              needsCatering: "yes",
+              needsAV: "yes",
+              responsible: "mikko-lesonen",
+              dietaryNeeds: "Vegaanit ~30 hlö, gluteenittomat ~15 hlö, laktoosittomat ~20 hlö",
+              seatingStyle: "banketti",
+              budgetRange: "15000_50000",
+              vipGuests: "Hallituksen jäsenet 15 hlö",
+              scheduleNotes: "08:00 Rakennus alkaa\n12:00 Ovet avautuvat\n12:30 Tervetulokahvi\n13:00 CEO keynote\n13:45 Paneelikeskustelu\n14:30 Kahvitauko\n15:00 Workshop\n16:30 Yhteenveto\n18:30 Cocktail-vastaanotto\n19:00 Gaala-illallinen\n21:00 Live-bändi\n23:30 Tapahtuma päättyy",
+            })}
+            className="text-[11px] text-gray-400 hover:text-gray-600 border border-dashed border-gray-300 rounded px-2 py-1 hover:border-gray-400 transition-colors"
+          >
+            Esitäytä (demo)
+          </button>
+        </div>
 
         {/* Pohjavalinta — vain myyjälle */}
         {!isClient && (
@@ -366,9 +408,21 @@ export default function NewLeadPage({ onSubmit, onCancel }: NewLeadPageProps) {
                 </p>
               </div>
 
+              {/* Alustava ohjelma / aikataulu */}
+              <div>
+                <FieldLabel number={7} label="Alustava ohjelma / aikataulu" />
+                <Textarea
+                  value={formData.scheduleNotes ?? ""}
+                  onChange={(e) => update("scheduleNotes", e.target.value)}
+                  placeholder={"Esim.\n09:00 Ovet avautuvat\n10:00 Keynote-puhe\n12:00 Lounas\n13:00 Paneelikeskustelu\n15:00 Kahvitauko\n18:00 Illallinen\n21:00 Live-musiikki"}
+                  rows={5}
+                />
+                <p className="mt-1 text-[11px] text-gray-400">Kirjoita yksi ohjelmahetki per rivi. Muoto: kellonaika + kuvaus.</p>
+              </div>
+
               {/* 8–9–10. Päivämäärä + Kellonaika + Osallistujat ── */}
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-                {/* 8. Päivämäärä */}
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                {/* Päivämäärä */}
                 <div>
                   <FieldLabel number={7} label="Päivämäärä" required />
                   <div className="relative">
@@ -399,32 +453,7 @@ export default function NewLeadPage({ onSubmit, onCancel }: NewLeadPageProps) {
                   </div>
                 </div>
 
-                {/* 9. Kellonaika */}
-                <div>
-                  <FieldLabel number={8} label="Kellonaika" required />
-                  <Select
-                    value={formData.time}
-                    onValueChange={(v) => update("time", v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Alkaen" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: 24 }, (_, h) => {
-                        const hour = h.toString().padStart(2, "0")
-                        return [`${hour}:00`, `${hour}:30`]
-                      })
-                        .flat()
-                        .map((t) => (
-                          <SelectItem key={t} value={t}>
-                            {t}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* 10. Osallistujamäärä */}
+                {/* Osallistujamäärä */}
                 <div>
                   <FieldLabel
                     number={10}
@@ -521,37 +550,87 @@ export default function NewLeadPage({ onSubmit, onCancel }: NewLeadPageProps) {
                 </div>
               )}
 
-              {/* 13–14. Catering + AV — vain myyjälle */}
-              {!isClient && (
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                  <div>
-                    <FieldLabel
-                      number={13}
-                      label="Tarvitaanko catering?"
-                      required
-                    />
-                    <ToggleGroup
-                      options={CATERING_OPTIONS}
-                      value={formData.needsCatering}
-                      onChange={(v) => update("needsCatering", v)}
-                    />
-                  </div>
-                  <div>
-                    <FieldLabel
-                      number={14}
-                      label="Tarvitaanko AV / tekniikka?"
-                      required
-                    />
-                    <ToggleGroup
-                      options={AV_OPTIONS}
-                      value={formData.needsAV}
-                      onChange={(v) => update("needsAV", v)}
-                    />
-                  </div>
+              {/* Asiakkaan lisäkysymykset — näytetään kaikille */}
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div>
+                  <FieldLabel number={11} label="Erikoisruokavaliot" />
+                  <Input
+                    value={formData.dietaryNeeds ?? ""}
+                    onChange={(e) => update("dietaryNeeds", e.target.value)}
+                    placeholder="Esim. vegaani 10 hlö, gluteeniton 5 hlö, laktoositon 8 hlö"
+                  />
                 </div>
-              )}
+                <div>
+                  <FieldLabel number={12} label="Toivottu kattaustyyli" />
+                  <Select
+                    value={formData.seatingStyle ?? ""}
+                    onValueChange={(v) => update("seatingStyle", v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Valitse kattaustyyli..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cocktail">Cocktail</SelectItem>
+                      <SelectItem value="banketti">Banketti (pyöreät pöydät)</SelectItem>
+                      <SelectItem value="buffet">Buffet</SelectItem>
+                      <SelectItem value="teatteri">Teatteri (ei ruokailua)</SelectItem>
+                      <SelectItem value="luokkahuone">Luokkahuone</SelectItem>
+                      <SelectItem value="u_muoto">U-muoto</SelectItem>
+                      <SelectItem value="muu">Muu</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-              {/* 15. Vastuuhenkilö — vain myyjälle */}
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div>
+                  <FieldLabel number={13} label="Budjettihaarukka" />
+                  <Select
+                    value={formData.budgetRange ?? ""}
+                    onValueChange={(v) => update("budgetRange", v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Valitse budjetti..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="alle_5000">Alle 5 000 €</SelectItem>
+                      <SelectItem value="5000_15000">5 000 – 15 000 €</SelectItem>
+                      <SelectItem value="15000_50000">15 000 – 50 000 €</SelectItem>
+                      <SelectItem value="yli_50000">Yli 50 000 €</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <FieldLabel number={14} label="VIP-vieraat" />
+                  <Input
+                    value={formData.vipGuests ?? ""}
+                    onChange={(e) => update("vipGuests", e.target.value)}
+                    placeholder="Esim. hallituksen jäsenet 15 hlö"
+                  />
+                </div>
+              </div>
+
+              {/* Catering + AV — näytetään kaikille */}
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div>
+                  <FieldLabel number={15} label="Tarvitaanko catering?" required />
+                  <ToggleGroup
+                    options={CATERING_OPTIONS}
+                    value={formData.needsCatering}
+                    onChange={(v) => update("needsCatering", v)}
+                  />
+                </div>
+                <div>
+                  <FieldLabel number={16} label="Tarvitaanko AV / tekniikka?" required />
+                  <ToggleGroup
+                    options={AV_OPTIONS}
+                    value={formData.needsAV}
+                    onChange={(v) => update("needsAV", v)}
+                  />
+                </div>
+              </div>
+
+              {/* Vastuuhenkilö — vain myyjälle */}
               {!isClient && (
                 <div>
                   <FieldLabel number={11} label="Vastuuhenkilö" required />

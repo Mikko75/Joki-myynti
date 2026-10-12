@@ -395,18 +395,7 @@ export default function PartnerCateringPage() {
         Lisää tarjoilu
       </button>
 
-      {/* Send plan to seller — vanha inline, pidetään fallbackina */}
-      {plan.moments.length > 0 && plan.status === "kumppanilla" && (
-        <div className="flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50 p-5">
-          <div>
-            <p className="text-[14px] font-semibold text-gray-900">Lähetä suunnitelma myyjälle</p>
-            <p className="text-[12px] text-gray-500 mt-0.5">Myyjä tarkistaa suunnitelman ja päättää jatkotoimenpiteistä.</p>
-          </div>
-          <Button onClick={() => updateCateringPlan(woId, { status: "vastattu" })}>
-            Lähetä myyjälle
-          </Button>
-        </div>
-      )}
+      {/* Inline send poistettu — RightPanel hoitaa lähetyksen */}
 
       {plan.status === "vastattu" && (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5">

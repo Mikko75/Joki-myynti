@@ -1,10 +1,12 @@
 import { useState } from "react"
-import { CheckCircle2, RotateCcw, MessageSquare, Clock } from "lucide-react"
+import { CheckCircle2, RotateCcw, MessageSquare, Clock, Calendar, Users, MapPin, UtensilsCrossed, Mic, Lightbulb, MonitorPlay, Construction, Radio } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useWorkOrders } from "@/context/WorkOrderContext"
+import { useMenus } from "@/context/MenuContext"
+import { spaces as spaceCatalog } from "@/data/mock"
 import { cn } from "@/lib/utils"
 import type { ProposalSectionStatus } from "@/data/types"
 
@@ -16,16 +18,13 @@ const STATUS_META: Record<ProposalSectionStatus, { label: string; badge: string 
   expired: { label: "Vanhentunut", badge: "bg-gray-100 text-gray-500" },
 }
 
-const SECTION_LABELS: Record<string, string> = {
-  tilat: "Tilat",
-  aikataulu: "Aikataulu",
-  catering: "Catering",
-  av: "AV / tekniikka",
-  lisapalvelut: "Lisäpalvelut",
+const AREA_ICONS: Record<string, typeof Mic> = {
+  aani: Mic, valo: Lightbulb, video: MonitorPlay, lava: Construction, striimaus: Radio,
 }
 
 export default function ProposalView({ workOrderId }: { workOrderId: string }) {
   const { getWorkOrder, updateWorkOrder, getCateringPlan, getAVPlan } = useWorkOrders()
+  const { menus } = useMenus()
   const workOrder = getWorkOrder(workOrderId)
   const [commentFor, setCommentFor] = useState<string | null>(null)
   const [commentText, setCommentText] = useState("")
@@ -34,12 +33,23 @@ export default function ProposalView({ workOrderId }: { workOrderId: string }) {
     return <div className="max-w-3xl mx-auto py-16 text-center"><p className="text-gray-500">Ei ehdotusta.</p></div>
   }
 
-  const wo = workOrder!
-  const proposals = (wo.proposalSections ?? []).filter((p) => p.status !== "draft")
+  const wo = workOrder
+  const proposals = (wo.proposalSections ?? []).filter((p) =>
+    p.status !== "draft"
+    && !p.sectionKey.startsWith("catering-")
+    && !p.sectionKey.startsWith("av-")
+    && p.sectionKey !== "av"
+  )
   const cateringPlan = getCateringPlan(workOrderId)
   const avPlan = getAVPlan(workOrderId)
-  const allSpaces = wo.eventDays.flatMap((d) => d.spaces)
   const allApproved = proposals.length > 0 && proposals.every((p) => p.status === "approved")
+
+  const day = wo.eventDays[0]
+  const allSpaces = wo.eventDays.flatMap((d) => d.spaces)
+  const scheduleItems = wo.eventDays.flatMap((d) => d.scheduleItems)
+  const avProduction = wo.avProduction
+  const activeAreas = avProduction?.productionAreas.filter((a) => a.status !== "ei_tarvita") ?? []
+  const customSections = wo.customSections ?? []
 
   function approve(sectionKey: string) {
     const updated = (wo.proposalSections ?? []).map((p) =>
@@ -57,58 +67,57 @@ export default function ProposalView({ workOrderId }: { workOrderId: string }) {
     setCommentText("")
   }
 
-  function getSectionSummary(key: string): string {
-    switch (key) {
-      case "tilat": return allSpaces.length > 0 ? allSpaces.map((s) => `${s.spaceName} — ${s.price?.toLocaleString("fi-FI")} €`).join(", ") : "Ei valittuja tiloja."
-      case "catering": return cateringPlan.moments.length > 0 ? cateringPlan.moments.map((m) => `${m.title} (${m.startTime}–${m.endTime})`).join(", ") : "Ei catering-hetkiä."
-      case "av": {
-        const avProd = wo.avProduction
-        if (avProd && (avProd.status === "valmis" || avProd.status === "vastattu")) {
-          const areas = avProd.productionAreas.filter((a) => a.status !== "ei_tarvita")
-          const parts = areas.map((a) => a.label)
-          if (avProd.totalPrice > 0) parts.push(`${avProd.totalPrice.toLocaleString("fi-FI")} €`)
-          return parts.join(" · ") || "AV-tuotanto"
-        }
-        return [avPlan.microphones, avPlan.audio, avPlan.screens].filter(Boolean).join(" · ") || "Ei AV-valintoja."
-      }
-      case "lisapalvelut": {
-        const parts: string[] = []
-        const avProd = wo.avProduction
-        if (avProd && (avProd.status === "valmis" || avProd.status === "vastattu")) {
-          const areas = avProd.productionAreas.filter((a) => a.status !== "ei_tarvita")
-          parts.push(...areas.map((a) => a.label))
-          if (avProd.totalPrice > 0) parts.push(`AV ${avProd.totalPrice.toLocaleString("fi-FI")} €`)
-        }
-        const addOns = wo.selectedAddOns ?? []
-        if (addOns.length > 0) parts.push(`${addOns.length} lisäpalvelua`)
-        return parts.length > 0 ? parts.join(" · ") : "Ei lisäpalveluita."
-      }
-      case "aikataulu": {
-        const items = wo.eventDays.flatMap((d) => d.scheduleItems)
-        return items.length > 0 ? items.map((i) => `${i.startTime} ${i.title}`).slice(0, 3).join(", ") : "Ei aikataulunimikkeitä."
-      }
-      default: {
-        if (key.startsWith("custom-")) {
-          const cs = wo.customSections?.find((s) => `custom-${s.id}` === key)
-          if (cs) {
-            const parts: string[] = []
-            if (cs.description) parts.push(cs.description)
-            if (cs.price) parts.push(`${cs.price.toLocaleString("fi-FI")} €`)
-            return parts.join(" · ") || cs.title
-          }
-        }
-        return ""
-      }
-    }
+  function getProposal(key: string) {
+    return proposals.find((p) => p.sectionKey === key)
   }
 
-  function getSectionLabel(key: string): string {
-    if (SECTION_LABELS[key]) return SECTION_LABELS[key]
-    if (key.startsWith("custom-")) {
-      const cs = wo.customSections?.find((s) => `custom-${s.id}` === key)
-      return cs?.title ?? key
-    }
-    return key
+  function renderActions(sectionKey: string) {
+    const p = getProposal(sectionKey)
+    if (!p) return null
+
+    return (
+      <div className="mt-4 pt-3 border-t border-gray-100">
+        {p.status === "sent" && (
+          <div className="flex gap-2">
+            <Button size="sm" onClick={() => approve(sectionKey)} className="gap-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5" /> Hyväksy
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => { setCommentFor(sectionKey); setCommentText("") }} className="gap-1.5">
+              <RotateCcw className="h-3.5 w-3.5" /> Pyydä muutoksia
+            </Button>
+          </div>
+        )}
+        {p.status === "approved" && (
+          <div className="flex items-center gap-2 text-[13px] text-emerald-600">
+            <CheckCircle2 className="h-4 w-4" /> Hyväksytty
+          </div>
+        )}
+        {p.status === "changes_requested" && (
+          <div className="flex items-center gap-2 text-[13px] text-amber-600">
+            <MessageSquare className="h-4 w-4" /> Muutospyyntö lähetetty
+          </div>
+        )}
+        {p.status === "expired" && (
+          <div className="flex items-center gap-2 text-[13px] text-gray-500">
+            <Clock className="h-4 w-4" /> Vanhentunut
+          </div>
+        )}
+        {p.clientComment && (
+          <div className="mt-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2">
+            <p className="text-[12px] text-red-700"><span className="font-semibold">Kommenttisi:</span> {p.clientComment}</p>
+          </div>
+        )}
+        {commentFor === sectionKey && (
+          <div className="mt-3 space-y-2">
+            <Textarea value={commentText} onChange={(e) => setCommentText(e.target.value)} placeholder="Kerro mitä haluat muuttaa..." rows={2} autoFocus />
+            <div className="flex gap-2">
+              <Button size="sm" onClick={() => requestChanges(sectionKey)} disabled={!commentText.trim()}>Lähetä</Button>
+              <Button size="sm" variant="outline" onClick={() => setCommentFor(null)}>Peruuta</Button>
+            </div>
+          </div>
+        )}
+      </div>
+    )
   }
 
   if (proposals.length === 0) {
@@ -121,103 +130,209 @@ export default function ProposalView({ workOrderId }: { workOrderId: string }) {
 
   return (
     <div className="max-w-3xl mx-auto py-8 px-4 space-y-6">
+      {/* Tapahtuman otsikko */}
       <div>
-        <p className="text-[12px] text-gray-400 uppercase tracking-wider font-medium">Ehdotus</p>
-        <h1 className="text-2xl font-bold text-gray-900 mt-1">{workOrder.customerCompany}</h1>
-        <p className="text-[14px] text-gray-500 mt-1">{workOrder.eventType} · {workOrder.number}</p>
+        <p className="text-[12px] text-gray-400 uppercase tracking-wider font-medium">Tapahtumatarjous</p>
+        <h1 className="text-2xl font-bold text-gray-900 mt-1">{wo.customerCompany}</h1>
+        <p className="text-[14px] text-gray-500 mt-1">{wo.eventType} · {wo.number}</p>
+        {wo.eventDescription && (
+          <p className="text-[13px] text-gray-600 mt-2 leading-relaxed">{wo.eventDescription}</p>
+        )}
       </div>
+
+      {/* Perustiedot */}
+      {day && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="flex items-center gap-2.5">
+            <Calendar className="h-4 w-4 text-gray-400" />
+            <div>
+              <p className="text-[11px] text-gray-500">Päivämäärä</p>
+              <p className="text-[13px] font-medium text-gray-900">{day.date}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <Clock className="h-4 w-4 text-gray-400" />
+            <div>
+              <p className="text-[11px] text-gray-500">Aika</p>
+              <p className="text-[13px] font-medium text-gray-900">{day.bookingStart}–{day.bookingEnd}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <Users className="h-4 w-4 text-gray-400" />
+            <div>
+              <p className="text-[11px] text-gray-500">Osallistujat</p>
+              <p className="text-[13px] font-medium text-gray-900">{wo.participantEstimate} hlö</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <MapPin className="h-4 w-4 text-gray-400" />
+            <div>
+              <p className="text-[11px] text-gray-500">Tilat</p>
+              <p className="text-[13px] font-medium text-gray-900">{allSpaces.length > 0 ? allSpaces.map((s) => s.spaceName).join(", ") : "–"}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {allApproved && (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-center">
           <CheckCircle2 className="h-8 w-8 text-emerald-500 mx-auto mb-2" />
           <p className="text-[15px] font-semibold text-emerald-800">Kaikki osiot hyväksytty</p>
-          <p className="text-[12px] text-emerald-600 mt-1">Ehdotus on nyt sitova. Olemme yhteydessä tapahtuman järjestelyistä.</p>
+          <p className="text-[12px] text-emerald-600 mt-1">Kiitos! Olemme yhteydessä tapahtuman järjestelyistä.</p>
         </div>
       )}
 
-      {proposals.map((p) => {
-        const meta = STATUS_META[p.status]
-        const label = getSectionLabel(p.sectionKey)
+      {/* TILAT */}
+      {getProposal("tilat") && allSpaces.length > 0 && (
+        <Card>
+          <div className="flex items-center justify-between mb-3">
+            <CardTitle>Tilat</CardTitle>
+            <Badge className={cn("text-[10px]", STATUS_META[getProposal("tilat")!.status].badge)}>
+              {STATUS_META[getProposal("tilat")!.status].label}
+            </Badge>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {allSpaces.map((es) => {
+              const detail = spaceCatalog.find((s) => s.id === es.spaceId)
+              return (
+                <div key={es.spaceId} className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                  {detail?.image && (
+                    <div className="h-28 w-full overflow-hidden rounded-lg mb-3">
+                      <img src={detail.image} alt={es.spaceName} className="h-full w-full object-cover" />
+                    </div>
+                  )}
+                  <p className="text-[14px] font-semibold text-gray-900">{es.spaceName}</p>
+                  {detail && <p className="text-[12px] text-gray-500 mt-0.5">{detail.capacity} hlö · {detail.type}</p>}
+                  {es.price > 0 && <p className="text-[13px] font-bold text-gray-900 mt-1">{es.price.toLocaleString("fi-FI")} €</p>}
+                </div>
+              )
+            })}
+          </div>
+          {renderActions("tilat")}
+        </Card>
+      )}
 
+      {/* AIKATAULU */}
+      {getProposal("aikataulu") && scheduleItems.length > 0 && (
+        <Card>
+          <div className="flex items-center justify-between mb-3">
+            <CardTitle>Aikataulu</CardTitle>
+            <Badge className={cn("text-[10px]", STATUS_META[getProposal("aikataulu")!.status].badge)}>
+              {STATUS_META[getProposal("aikataulu")!.status].label}
+            </Badge>
+          </div>
+          <div className="space-y-1">
+            {scheduleItems.map((item) => (
+              <div key={item.id} className="flex items-center gap-3 py-2 border-b border-gray-100 last:border-0">
+                <span className="text-[13px] font-mono text-gray-500 w-24 shrink-0">
+                  {item.startTime}{item.endTime && item.endTime !== item.startTime ? `–${item.endTime}` : ""}
+                </span>
+                <span className="text-[13px] font-medium text-gray-900 flex-1">{item.title}</span>
+                <Badge variant="outline" className="text-[9px]">{item.type}</Badge>
+              </div>
+            ))}
+          </div>
+          {renderActions("aikataulu")}
+        </Card>
+      )}
+
+      {/* CATERING */}
+      {getProposal("catering") && cateringPlan.moments.length > 0 && (
+        <Card>
+          <div className="flex items-center justify-between mb-3">
+            <CardTitle>Catering</CardTitle>
+            <Badge className={cn("text-[10px]", STATUS_META[getProposal("catering")!.status].badge)}>
+              {STATUS_META[getProposal("catering")!.status].label}
+            </Badge>
+          </div>
+          <div className="space-y-3">
+            {cateringPlan.moments.map((m) => {
+              const selectedMenu = m.menuName ? menus.find((mn) => mn.name === m.menuName) : null
+              const products = m.proposalProducts ?? selectedMenu?.products.map((p) => ({ productId: p.id, name: p.name, unitPrice: p.unitPrice, unit: p.unit, quantity: 1 })) ?? []
+              return (
+                <div key={m.id} className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-[14px] font-semibold text-gray-900">{m.title}</p>
+                    <span className="text-[12px] text-gray-500">{m.startTime}–{m.endTime}</span>
+                  </div>
+                  {m.menuName && <p className="text-[12px] text-gray-500 mb-2">Menu: {m.menuName}</p>}
+                  {products.length > 0 && (
+                    <div className="space-y-1">
+                      {products.map((p) => (
+                        <div key={p.productId} className="flex items-center justify-between text-[12px]">
+                          <span className="text-gray-700">{p.name}</span>
+                          <span className="text-gray-500">{p.unitPrice.toLocaleString("fi-FI")} €/{p.unit}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+          {renderActions("catering")}
+        </Card>
+      )}
+
+      {/* LISÄPALVELUT & AV */}
+      {getProposal("lisapalvelut") && (
+        <Card>
+          <div className="flex items-center justify-between mb-3">
+            <CardTitle>Lisäpalvelut & AV</CardTitle>
+            <Badge className={cn("text-[10px]", STATUS_META[getProposal("lisapalvelut")!.status].badge)}>
+              {STATUS_META[getProposal("lisapalvelut")!.status].label}
+            </Badge>
+          </div>
+          {activeAreas.length > 0 && (
+            <div className="space-y-3">
+              {activeAreas.map((area) => {
+                const Icon = AREA_ICONS[area.key] ?? Mic
+                return (
+                  <div key={area.key} className="flex items-start gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 text-blue-600 shrink-0">
+                      <Icon className="h-4.5 w-4.5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[13px] font-semibold text-gray-900">{area.label}</span>
+                        {area.price != null && area.price > 0 && (
+                          <span className="text-[13px] font-bold text-gray-900">{area.price.toLocaleString("fi-FI")} €</span>
+                        )}
+                      </div>
+                      {area.description && <p className="mt-1 text-[12px] text-gray-600">{area.description}</p>}
+                    </div>
+                  </div>
+                )
+              })}
+              {avProduction && avProduction.totalPrice > 0 && (
+                <div className="flex justify-between text-[14px] font-bold text-gray-900 pt-2 border-t border-gray-100">
+                  <span>AV yhteensä</span>
+                  <span>{avProduction.totalPrice.toLocaleString("fi-FI")} €</span>
+                </div>
+              )}
+            </div>
+          )}
+          {renderActions("lisapalvelut")}
+        </Card>
+      )}
+
+      {/* CUSTOM-OSIOT */}
+      {proposals.filter((p) => p.sectionKey.startsWith("custom-")).map((p) => {
+        const cs = customSections.find((s) => `custom-${s.id}` === p.sectionKey)
+        if (!cs) return null
         return (
           <Card key={p.sectionKey}>
             <div className="flex items-center justify-between mb-3">
-              <CardTitle className="text-base">{label}</CardTitle>
-              <Badge className={cn("text-[10px]", meta.badge)}>{meta.label}</Badge>
+              <CardTitle>{cs.title}</CardTitle>
+              <Badge className={cn("text-[10px]", STATUS_META[p.status].badge)}>
+                {STATUS_META[p.status].label}
+              </Badge>
             </div>
-
-            <p className="text-[13px] text-gray-600 leading-relaxed mb-4">{getSectionSummary(p.sectionKey)}</p>
-
-            {p.clientComment && (
-              <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-2.5 mb-4">
-                <p className="text-[12px] text-red-700"><span className="font-semibold">Sinun kommenttisi:</span> {p.clientComment}</p>
-              </div>
+            <p className="text-[13px] text-gray-600 leading-relaxed">{cs.description}</p>
+            {cs.price != null && cs.price > 0 && (
+              <p className="mt-2 text-[14px] font-bold text-gray-900">{cs.price.toLocaleString("fi-FI")} €</p>
             )}
-
-            {p.status === "sent" && (
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  onClick={() => approve(p.sectionKey)}
-                  className="gap-1.5"
-                >
-                  <CheckCircle2 className="h-3.5 w-3.5" /> Hyväksy
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => { setCommentFor(p.sectionKey); setCommentText("") }}
-                  className="gap-1.5"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" /> Pyydä muutoksia
-                </Button>
-              </div>
-            )}
-
-            {p.status === "approved" && (
-              <div className="flex items-center gap-2 text-[13px] text-emerald-600">
-                <CheckCircle2 className="h-4 w-4" /> Hyväksytty
-              </div>
-            )}
-
-            {p.status === "changes_requested" && (
-              <div className="flex items-center gap-2 text-[13px] text-amber-600">
-                <MessageSquare className="h-4 w-4" /> Muutospyyntö lähetetty myyjälle
-              </div>
-            )}
-
-            {p.status === "expired" && (
-              <div className="flex items-center gap-2 text-[13px] text-gray-500">
-                <Clock className="h-4 w-4" /> Varaus on päättynyt
-              </div>
-            )}
-
-            {p.status === "sent" && p.deadline && (
-              <div className="flex items-center gap-1.5 text-[11px] text-gray-500 mt-2">
-                <Clock className="h-3 w-3" />
-                Voimassa {new Date(p.deadline).toLocaleDateString("fi-FI")} asti
-              </div>
-            )}
-
-            {commentFor === p.sectionKey && (
-              <div className="mt-3 space-y-2">
-                <Textarea
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  placeholder="Kerro mitä haluat muuttaa..."
-                  rows={2}
-                  autoFocus
-                />
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={() => requestChanges(p.sectionKey)} disabled={!commentText.trim()}>
-                    Lähetä
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => setCommentFor(null)}>
-                    Peruuta
-                  </Button>
-                </div>
-              </div>
-            )}
+            {renderActions(p.sectionKey)}
           </Card>
         )
       })}

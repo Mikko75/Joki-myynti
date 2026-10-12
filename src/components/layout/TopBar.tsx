@@ -6,8 +6,13 @@ import { useWorkOrders } from "@/context/WorkOrderContext"
 import { useMode } from "@/context/ModeContext"
 import { InviteModal } from "@/components/common/InviteModal"
 
+interface BreadcrumbItem {
+  label: string
+  to?: string
+}
+
 interface TopBarProps {
-  breadcrumbs: string[]
+  breadcrumbs: BreadcrumbItem[]
 }
 
 const AVATAR_COLORS = ["#384ff7", "#26ad61", "#f59e0a", "#e84545", "#944ade"]
@@ -61,20 +66,26 @@ export function TopBar({ breadcrumbs }: TopBarProps) {
 
         {breadcrumbs.length > 0 && (
           <nav className="flex items-center">
-            {breadcrumbs.map((crumb, i) => (
-              <span key={i} className="flex items-center shrink-0">
-                <ChevronRight className="h-4.5 w-4.5 text-[#a3adb8] mx-0.5" />
-                <span
-                  className={
-                    i === breadcrumbs.length - 1
-                      ? "text-sm font-semibold text-[#1c2126]"
-                      : "text-sm text-[#66707a]"
-                  }
-                >
-                  {crumb}
+            {breadcrumbs.map((crumb, i) => {
+              const isLast = i === breadcrumbs.length - 1
+              return (
+                <span key={i} className="flex items-center shrink-0">
+                  <ChevronRight className="h-4.5 w-4.5 text-[#a3adb8] mx-0.5" />
+                  {crumb.to && !isLast ? (
+                    <button
+                      onClick={() => navigate(crumb.to!)}
+                      className="text-sm text-[#66707a] hover:text-[#1c2126] hover:underline underline-offset-2 transition-colors cursor-pointer"
+                    >
+                      {crumb.label}
+                    </button>
+                  ) : (
+                    <span className={isLast ? "text-sm font-semibold text-[#1c2126]" : "text-sm text-[#66707a]"}>
+                      {crumb.label}
+                    </span>
+                  )}
                 </span>
-              </span>
-            ))}
+              )
+            })}
           </nav>
         )}
 

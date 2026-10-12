@@ -8,6 +8,13 @@ JOKI Myynti-Peli (Joki-MP) is an event sales work order management system ("työ
 
 The UI language is Finnish. Route paths, type names, status values, and labels use Finnish terminology throughout.
 
+## Mandatory Reading Before Any Change
+
+Before implementing or changing ANY file, READ these documents:
+
+1. **`docs/JOKI_MASTER_FLOW.md`** — Source of truth for the interaction model
+2. **`docs/PORTAL_SEGMENTS.md`** — Portal ownership rules. Every file belongs to a segment (Myyjä/Asiakas/Catering/AV/Jaettu). Do NOT cross segment boundaries without permission.
+
 ## Commands
 
 - `npm run dev` — Start Vite dev server (http://localhost:5173)

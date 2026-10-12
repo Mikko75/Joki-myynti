@@ -308,7 +308,7 @@ export default function CateringPage() {
             <div className="relative">
               <Input
                 placeholder="Esim. kasvis, gluteeniton"
-                value={plan.dietaryNeeds}
+                value={plan.dietaryNeeds || workOrder?.accessibilityNeeds || ""}
                 onChange={(e) => updateCateringPlan(workOrderId, { dietaryNeeds: e.target.value })}
                 className="pr-9"
               />
@@ -320,7 +320,7 @@ export default function CateringPage() {
             <div className="relative">
               <Input
                 placeholder="Päätalo, Aula"
-                value={plan.servingArea}
+                value={plan.servingArea || (spaces.length > 0 ? spaces.map((s) => s.spaceName).join(", ") : "")}
                 onChange={(e) => updateCateringPlan(workOrderId, { servingArea: e.target.value })}
                 className="pr-9"
               />
@@ -369,7 +369,7 @@ export default function CateringPage() {
             <div className="relative">
               <Input
                 placeholder="Esim. banketti, cocktail, buffet"
-                value={plan.notes.includes("kattaus:") ? plan.notes.split("kattaus:")[1]?.split("\n")[0] ?? "" : ""}
+                value={plan.notes.includes("kattaus:") ? plan.notes.split("kattaus:")[1]?.split("\n")[0] ?? "" : (workOrder?.seatingStyle ? { teatteri: "Teatteri", luokkahuone: "Luokkahuone", u_muoto: "U-muoto", banketti: "Banketti", cocktail: "Cocktail", muu: "Muu" }[workOrder.seatingStyle] ?? "" : "")}
                 onChange={(e) => {
                   const rest = plan.notes.replace(/kattaus:.*(\n|$)/, "")
                   updateCateringPlan(workOrderId, { notes: `${rest}kattaus:${e.target.value}` })

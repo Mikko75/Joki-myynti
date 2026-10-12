@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useCurrentWorkOrder } from "@/hooks/useCurrentWorkOrder"
 import { useWorkOrders } from "@/context/WorkOrderContext"
+import type { AVProduction } from "@/data/types"
 import { useMode } from "@/context/ModeContext"
 import { cn } from "@/lib/utils"
 
@@ -51,6 +52,10 @@ export function RightPanel() {
   const isCatering = lastSegment === "catering"
   const isCateringSeller = isCatering && isSeller
   const isCateringPartner = isCatering && !isSeller
+  const isAV = lastSegment === "av"
+  const isAVSeller = isAV && isSeller
+  const isAVPartner = isAV && !isSeller
+  const isPartnerPage = isCateringPartner || isAVPartner
   const [isOpen, setIsOpen] = useState(true)
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({})
 
@@ -75,7 +80,9 @@ export function RightPanel() {
   const allProposals = wo.proposalSections ?? []
   const proposals = isCatering
     ? allProposals.filter((p) => p.sectionKey.startsWith("catering-"))
-    : allProposals.filter((p) => !p.sectionKey.startsWith("catering-"))
+    : isAV
+    ? allProposals.filter((p) => p.sectionKey === "av" || p.sectionKey.startsWith("av-"))
+    : allProposals.filter((p) => !p.sectionKey.startsWith("catering-") && p.sectionKey !== "av" && !p.sectionKey.startsWith("av-"))
   const hasDrafts = proposals.some((p) => p.status === "draft")
 
   const cateringPlan = getCateringPlan(workOrderId)
@@ -101,6 +108,13 @@ export function RightPanel() {
     } else if (isCateringPartner) {
       updateWorkOrder(workOrderId, { proposalSections: updated })
       updateCateringPlan(workOrderId, { status: "vastattu" })
+    } else if (isAVSeller) {
+      const avBase: AVProduction = wo.avProduction ?? { status: "ei_aloitettu", needs: [], productionAreas: [], totalPrice: 0, notes: "" }
+      updateWorkOrder(workOrderId, { proposalSections: updated, avProduction: { ...avBase, status: "kumppanilla" } })
+    } else if (isAVPartner) {
+      const avBase: AVProduction = wo.avProduction ?? { status: "ei_aloitettu", needs: [], productionAreas: [], totalPrice: 0, notes: "" }
+      const total = avBase.productionAreas.filter((a) => a.status !== "ei_tarvita").reduce((s, a) => s + (a.price ?? 0), 0)
+      updateWorkOrder(workOrderId, { proposalSections: updated, avProduction: { ...avBase, status: "vastattu", totalPrice: total } })
     } else {
       updateWorkOrder(workOrderId, { proposalSections: updated, status: "asiakkaalla" })
     }
@@ -144,6 +158,15 @@ export function RightPanel() {
         }
       }
       default: {
+        if (key.startsWith("av-")) {
+          const areaKey = key.replace("av-", "")
+          const area = wo.avProduction?.productionAreas.find((a) => a.key === areaKey)
+          if (area) {
+            const lines: { label: string; value: string }[] = []
+            if (area.description) lines.push({ label: "Suunnitelma", value: area.description.slice(0, 60) })
+            return { lines, total: area.price }
+          }
+        }
         if (key.startsWith("catering-")) {
           const momentId = key.replace("catering-", "")
           const moment = cateringPlan.moments.find((m) => m.id === momentId)
@@ -181,7 +204,7 @@ export function RightPanel() {
     <aside className="hidden lg:flex w-80 shrink-0 flex-col overflow-y-auto border-l border-gray-200 p-5" style={{ backgroundColor: "#F8FAFC" }}>
       <div className="flex items-center justify-between">
         <h3 className="text-[15px] font-semibold text-gray-900">
-          {isCateringSeller ? "Ehdotus kumppanille" : isCateringPartner ? (hasDrafts ? "Ehdotus myyjälle" : "Myyjältä saatu") : "Ehdotus asiakkaalle"}
+          {isCateringSeller || isAVSeller ? "Ehdotus kumppanille" : isPartnerPage ? (hasDrafts ? "Ehdotus myyjälle" : "Myyjältä saatu") : "Ehdotus asiakkaalle"}
         </h3>
         <button onClick={() => setIsOpen(false)} className="p-1 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100 transition-colors" title="Sulje">
           <PanelRightClose className="h-4 w-4" />
@@ -189,7 +212,10 @@ export function RightPanel() {
       </div>
 
       <p className="text-[11px] text-gray-400 mt-1 mb-4">
-        {isCateringSeller ? "Lisää tarjoiluhetkiä (+) ja lähetä kumppanille." : isCateringPartner ? (hasDrafts ? "Muokkaa ja lähetä takaisin myyjälle." : "Myyjän lähettämä catering-pyyntö.") : "Lisää osioita kortteista (+) ja lähetä ehdotus."}
+        {isCateringSeller ? "Lisää tarjoiluhetkiä (+) ja lähetä kumppanille."
+          : isAVSeller ? "Lisää AV-osioita (+) ja lähetä kumppanille."
+          : isPartnerPage ? (hasDrafts ? "Muokkaa ja lähetä takaisin myyjälle." : "Myyjän lähettämä pyyntö.")
+          : "Lisää osioita kortteista (+) ja lähetä ehdotus."}
       </p>
 
       {(() => {
@@ -246,11 +272,12 @@ export function RightPanel() {
                     )}
                     <span className="text-[12px] font-medium text-gray-900">
                       {SECTION_LABELS[p.sectionKey]
-                        ?? (p.sectionKey.startsWith("catering-") ? cateringPlan.moments.find((m) => m.id === p.sectionKey.replace("catering-", ""))?.title ?? "Catering"
+                        ?? (p.sectionKey.startsWith("av-") ? wo.avProduction?.productionAreas.find((a) => a.key === p.sectionKey.replace("av-", ""))?.label ?? "AV"
+                        : p.sectionKey.startsWith("catering-") ? cateringPlan.moments.find((m) => m.id === p.sectionKey.replace("catering-", ""))?.title ?? "Catering"
                         : wo.customSections?.find((s) => `custom-${s.id}` === p.sectionKey)?.title ?? p.sectionKey)}
                     </span>
                     <Badge className={cn("text-[9px] px-1.5 py-0", meta.badge)}>
-                      {isCatering && p.status === "sent" ? "Lähetetty" : meta.label}
+                      {(isCatering || isAV) && p.status === "sent" ? "Lähetetty" : meta.label}
                     </Badge>
                   </div>
                   {p.status === "draft" && (
@@ -354,8 +381,8 @@ export function RightPanel() {
         >
           <Send className="h-3.5 w-3.5" />
           {hasDrafts
-            ? (isCateringSeller ? "Lähetä kumppanille" : isCateringPartner ? "Lähetä myyjälle" : "Lähetä ehdotus")
-            : (isCatering ? "Lähetetty" : "Ehdotus lähetetty")}
+            ? (isCateringSeller || isAVSeller ? "Lähetä kumppanille" : isPartnerPage ? "Lähetä myyjälle" : "Lähetä ehdotus")
+            : (isCatering || isAV ? "Lähetetty" : "Ehdotus lähetetty")}
         </Button>
       )}
 
