@@ -56,6 +56,17 @@ export function TeamProvider({ children }: { children: ReactNode }) {
       seeSchedule: true,
     },
     {
+      id: "partner-unica",
+      name: "Unica Catering",
+      email: "info@unica.fi",
+      role: "Catering",
+      initials: "UC",
+      color: "#3b82f6",
+      permission: "edit",
+      sections: ["Catering"],
+      seeSchedule: true,
+    },
+    {
       id: "partner-av",
       name: "Rajupaja Oy",
       email: "info@rajupaja.fi",

@@ -228,6 +228,7 @@ export interface CateringMoment {
   status: string
   notes?: string
   proposalProducts?: ProposalProduct[]
+  variant?: string
 }
 
 export interface Menu {

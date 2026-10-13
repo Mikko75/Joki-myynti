@@ -141,6 +141,7 @@ export default function CateringPage() {
   const [editNotes, setEditNotes] = useState("")
   const [expandedMenuId, setExpandedMenuId] = useState<string | null>(null)
   const [menuCategoryFilter, setMenuCategoryFilter] = useState<string | null>(null)
+  const [showMenuPicker, setShowMenuPicker] = useState(false)
 
   if (!workOrder) return <p className="text-gray-500">Työmääräintä ei löytynyt.</p>
 
@@ -484,7 +485,7 @@ export default function CateringPage() {
                     </div>
                   </div>
 
-                  {/* Valittu menu */}
+                  {/* Kumppanin valitsema menu tai myyjän oma valinta */}
                   {selectedMenu && (
                     <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-3">
                       <div className="flex items-center justify-between mb-2">
@@ -496,7 +497,7 @@ export default function CateringPage() {
                         <button
                           type="button"
                           className="text-[11px] text-blue-600 hover:text-blue-800"
-                          onClick={() => updateCateringMoment(workOrderId, m.id, { menuName: "", menuId: "" })}
+                          onClick={() => { updateCateringMoment(workOrderId, m.id, { menuName: "", menuId: "", proposalProducts: undefined }); setExpandedMenuId(m.id) }}
                         >
                           Vaihda
                         </button>
@@ -514,45 +515,56 @@ export default function CateringPage() {
                     </div>
                   )}
 
-                  {/* Menu-lista — kun ei valittu */}
-                  {!selectedMenu && (
+                  {/* Menu-valinta — piilotettu switchin taakse */}
+                  {!selectedMenu && !showMenuPicker && (
+                    <button
+                      type="button"
+                      onClick={() => setShowMenuPicker(true)}
+                      className="flex items-center gap-1.5 text-[12px] text-blue-600 hover:text-blue-800"
+                    >
+                      <UtensilsCrossed className="h-3.5 w-3.5" />
+                      Valitse menu itse (valinnainen)
+                    </button>
+                  )}
+                  {!selectedMenu && showMenuPicker && (
                     <>
                       {(() => {
-                        const categories = [...new Set(menus.map((mn) => mn.category).filter(Boolean))]
-                        if (categories.length <= 1) return null
-                        return (
-                          <div className="flex flex-wrap gap-2">
-                            <button type="button" className={cn("rounded-full px-3 py-1 text-[12px] font-medium transition-colors", !menuCategoryFilter ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200")} onClick={() => setMenuCategoryFilter(null)}>Kaikki</button>
-                            {categories.map((cat) => (
-                              <button key={cat} type="button" className={cn("rounded-full px-3 py-1 text-[12px] font-medium transition-colors", menuCategoryFilter === cat ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200")} onClick={() => setMenuCategoryFilter(cat!)}>{cat}</button>
-                            ))}
-                          </div>
-                        )
-                      })()}
-                      {menus.filter((mn) => !menuCategoryFilter || mn.category === menuCategoryFilter).map((menu) => (
-                        <div
-                          key={menu.id}
-                          className="flex items-start gap-3 rounded-lg border border-gray-200 bg-white p-3 hover:border-gray-300 cursor-pointer transition-colors"
-                          onClick={() => {
-                            updateCateringMoment(workOrderId, m.id, {
-                              menuName: menu.name,
-                              menuId: menu.id,
-                              proposalProducts: menu.products.map((p) => ({
-                                productId: p.id, name: p.name, unitPrice: p.unitPrice, unit: p.unit, quantity: 1,
-                              })),
-                            })
-                          }}
-                        >
-                          <div className="h-10 w-10 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0">
-                            <UtensilsCrossed className="h-4 w-4 text-gray-400" />
-                          </div>
-                          <div className="flex-1 min-w-0">
+                        const partnerIds = [...new Set(menus.map((mn) => mn.partnerId))]
+                        const partnerNames: Record<string, string> = { 'partner-1': 'Mauno', 'partner-2': 'Unica' }
+                        return partnerIds.map((pid) => {
+                          const partnerMenus = menus.filter((mn) => mn.partnerId === pid)
+                          if (partnerMenus.length === 0) return null
+                          return (
+                            <div key={pid} className="space-y-2">
+                              <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">{partnerNames[pid] ?? pid}</p>
+                              {partnerMenus.map((menu) => (
+                                <div
+                                  key={menu.id}
+                                  className="flex items-start gap-3 rounded-lg border border-gray-200 bg-white p-3 hover:border-gray-300 cursor-pointer transition-colors"
+                                  onClick={() => {
+                                    updateCateringMoment(workOrderId, m.id, {
+                                      menuName: menu.name,
+                                      menuId: menu.id,
+                                      proposalProducts: menu.products.map((p) => ({
+                                        productId: p.id, name: p.name, unitPrice: p.unitPrice, unit: p.unit, quantity: 1,
+                                      })),
+                                    })
+                                  }}
+                                >
+                                  <div className="h-10 w-10 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0">
+                                    <UtensilsCrossed className="h-4 w-4 text-gray-400" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
                             <span className="text-[13px] font-semibold text-gray-900">{menu.name}</span>
                             {menu.description && <p className="text-[11px] text-gray-500 mt-0.5">{menu.description}</p>}
-                            <span className="text-[11px] text-gray-500">{menu.products.length} tuotetta · {menu.pricePerPerson.toFixed(2)} €/hlö</span>
+                            <span className="text-[11px] text-gray-500">{menu.products.length} tuotetta{menu.pricePerPerson > 0 ? ` · ${menu.pricePerPerson.toFixed(2)} €/hlö` : ""}</span>
                           </div>
                         </div>
                       ))}
+                            </div>
+                          )
+                        })
+                      })()}
                     </>
                   )}
 

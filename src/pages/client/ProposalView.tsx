@@ -245,30 +245,52 @@ export default function ProposalView({ workOrderId }: { workOrderId: string }) {
               {STATUS_META[getProposal("catering")!.status].label}
             </Badge>
           </div>
-          <div className="space-y-3">
-            {cateringPlan.moments.map((m) => {
-              const selectedMenu = m.menuName ? menus.find((mn) => mn.name === m.menuName) : null
-              const products = m.proposalProducts ?? selectedMenu?.products.map((p) => ({ productId: p.id, name: p.name, unitPrice: p.unitPrice, unit: p.unit, quantity: 1 })) ?? []
-              return (
-                <div key={m.id} className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-[14px] font-semibold text-gray-900">{m.title}</p>
-                    <span className="text-[12px] text-gray-500">{m.startTime}–{m.endTime}</span>
-                  </div>
-                  {m.menuName && <p className="text-[12px] text-gray-500 mb-2">Menu: {m.menuName}</p>}
-                  {products.length > 0 && (
-                    <div className="space-y-1">
-                      {products.map((p) => (
-                        <div key={p.productId} className="flex items-center justify-between text-[12px]">
-                          <span className="text-gray-700">{p.name}</span>
-                          <span className="text-gray-500">{p.unitPrice.toLocaleString("fi-FI")} €/{p.unit}</span>
-                        </div>
-                      ))}
+          <div className="space-y-4">
+            {(() => {
+              const moments = cateringPlan.moments
+              const grouped: Record<string, typeof moments> = {}
+              for (const m of moments) {
+                const key = `${m.title}__${m.startTime}__${m.endTime}`
+                if (!grouped[key]) grouped[key] = []
+                grouped[key].push(m)
+              }
+              return Object.entries(grouped).map(([key, group]) => {
+                const first = group[0]
+                const isVariants = group.length > 1
+                return (
+                  <div key={key}>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-[14px] font-semibold text-gray-900">{first.title}</p>
+                      <span className="text-[12px] text-gray-500">{first.startTime}–{first.endTime}</span>
                     </div>
-                  )}
-                </div>
-              )
-            })}
+                    <div className={cn("grid gap-3", isVariants ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1")}>
+                      {group.map((m, i) => {
+                        const selectedMenu = m.menuName ? menus.find((mn) => mn.name === m.menuName) : null
+                        const products = m.proposalProducts ?? selectedMenu?.products.map((p) => ({ productId: p.id, name: p.name, unitPrice: p.unitPrice, unit: p.unit, quantity: 1 })) ?? []
+                        return (
+                          <div key={m.id} className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                            {isVariants && (
+                              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-2">Vaihtoehto {String.fromCharCode(65 + i)}</p>
+                            )}
+                            {m.menuName && <p className="text-[13px] font-semibold text-gray-900 mb-2">{m.menuName}</p>}
+                            {products.length > 0 && (
+                              <div className="space-y-1">
+                                {products.map((p) => (
+                                  <div key={p.productId} className="flex items-center justify-between text-[12px]">
+                                    <span className="text-gray-700">{p.name}</span>
+                                    {p.unitPrice > 0 && <span className="text-gray-500">{p.unitPrice.toLocaleString("fi-FI")} €/{p.unit}</span>}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })
+            })()}
           </div>
           {renderActions("catering")}
         </Card>
