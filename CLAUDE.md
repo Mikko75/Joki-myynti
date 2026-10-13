@@ -8,6 +8,20 @@ JOKI Myynti-Peli (Joki-MP) is an event sales work order management system ("työ
 
 The UI language is Finnish. Route paths, type names, status values, and labels use Finnish terminology throughout.
 
+## SIDEBAR-SÄÄNTÖ (RIKKOMATON)
+
+**RightPanel (oikea sivupalkki) = VAIN LÄHETTÄMISTÄ VARTEN.**
+
+- Sidebar on AINA tyhjä kun vastaanotetaan sisältöä
+- KAIKKI saapuva sisältö (kumppanin ehdotukset, asiakkaan kommentit) → KESKISISÄLTÖÖN
+- Sidebar näyttää VAIN käyttäjän itse lisäämät (+) kohteet jotka hän aikoo lähettää
+- Myyjän catering-sidebar: vain `sectionKey === "catering"` (myyjän oma pyyntö)
+- Kumppanin catering-sidebar: vain `sectionKey.startsWith("catering-")` (kumppanin omat momentit)
+- Kumppanin lähettämät ehdotukset EIVÄT SAA KOSKAAN näkyä myyjän sidebarissa
+- Tämä koskee KAIKKIA portaaleja: myyjä, kumppani, AV, catering. EI POIKKEUKSIA.
+
+**Ennen RightPanel.tsx-muutosta, kysy: "Näytänkö saapuvaa vai lähetettävää dataa?" Jos saapuvaa → KESKELLE, ei sidebariin.**
+
 ## Mandatory Reading Before Any Change
 
 Before implementing or changing ANY file, READ these documents:

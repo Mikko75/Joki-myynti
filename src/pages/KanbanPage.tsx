@@ -24,9 +24,10 @@ function parseScheduleNotes(notes: string): ScheduleItem[] {
     if (!match) return null
     const time = match[1].replace(".", ":")
     const title = match[2].trim()
+    const isCatering = /kahvi|lounas|ruoka|illallinen|cocktail|catering|tarjoilu|aamiainen|buffet|dinner|lunch|breakfast/i.test(title)
     return {
       id: `si-client-${Date.now()}-${i}`,
-      type: "ohjelma" as const,
+      type: isCatering ? "catering" as const : "ohjelma" as const,
       title,
       startTime: time,
       endTime: time,

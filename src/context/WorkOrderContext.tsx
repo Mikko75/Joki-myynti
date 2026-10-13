@@ -36,11 +36,12 @@ interface WorkOrderContextValue {
   updateScheduleItem: (woId: string, dayId: string, itemId: string, updates: Partial<ScheduleItem>) => void
   removeScheduleItem: (woId: string, dayId: string, itemId: string) => void
 
-  getCateringPlan: (woId: string) => CateringPlanState
-  updateCateringPlan: (woId: string, updates: Partial<CateringPlanState>) => void
-  addCateringMoment: (woId: string, moment: CateringMoment) => void
-  updateCateringMoment: (woId: string, momentId: string, updates: Partial<CateringMoment>) => void
-  removeCateringMoment: (woId: string, momentId: string) => void
+  getCateringPlan: (woId: string, partnerId?: string) => CateringPlanState
+  getAllCateringPlans: (woId: string) => Record<string, CateringPlanState>
+  updateCateringPlan: (woId: string, partnerId: string, updates: Partial<CateringPlanState>) => void
+  addCateringMoment: (woId: string, partnerId: string, moment: CateringMoment) => void
+  updateCateringMoment: (woId: string, partnerId: string, momentId: string, updates: Partial<CateringMoment>) => void
+  removeCateringMoment: (woId: string, partnerId: string, momentId: string) => void
 
   getAVPlan: (woId: string) => AVPlanState
   updateAVPlan: (woId: string, updates: Partial<AVPlanState>) => void
@@ -72,7 +73,7 @@ const WorkOrderContext = createContext<WorkOrderContextValue | null>(null)
 
 export function WorkOrderProvider({ children }: { children: ReactNode }) {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>(initialWorkOrders)
-  const [cateringPlans, setCateringPlans] = useState<Record<string, CateringPlanState>>({})
+  const [cateringPlans, setCateringPlans] = useState<Record<string, Record<string, CateringPlanState>>>({})
   const [avPlans, setAVPlans] = useState<Record<string, AVPlanState>>({})
 
   const cateringRef = useRef(cateringPlans)
@@ -160,50 +161,75 @@ export function WorkOrderProvider({ children }: { children: ReactNode }) {
     )
   }, [])
 
+  const DEFAULT_PARTNER = "_default"
+
   const getCateringPlan = useCallback(
-    (woId: string): CateringPlanState => {
-      const stored = cateringRef.current[woId]
-      if (stored) return stored
-      return { ...emptyCatering }
+    (woId: string, partnerId?: string): CateringPlanState => {
+      const woPlans = cateringRef.current[woId]
+      if (!woPlans) return { ...emptyCatering }
+      if (partnerId) {
+        return woPlans[partnerId] ?? { ...emptyCatering }
+      }
+      const keys = Object.keys(woPlans)
+      if (keys.length === 0) return { ...emptyCatering }
+      if (keys.length === 1) return woPlans[keys[0]]
+      const allMoments = keys.flatMap((k) => woPlans[k].moments)
+      return { ...woPlans[keys[0]], moments: allMoments }
     },
     [cateringPlans]
   )
 
-  const updateCateringPlan = useCallback((woId: string, updates: Partial<CateringPlanState>) => {
+  const getAllCateringPlans = useCallback(
+    (woId: string): Record<string, CateringPlanState> => {
+      return cateringRef.current[woId] ?? {}
+    },
+    [cateringPlans]
+  )
+
+  const updateCateringPlan = useCallback((woId: string, partnerId: string, updates: Partial<CateringPlanState>) => {
     setCateringPlans((prev) => ({
       ...prev,
-      [woId]: { ...(prev[woId] ?? { ...emptyCatering }), ...updates },
+      [woId]: {
+        ...(prev[woId] ?? {}),
+        [partnerId]: { ...(prev[woId]?.[partnerId] ?? { ...emptyCatering }), ...updates },
+      },
     }))
   }, [])
 
-  const addCateringMoment = useCallback((woId: string, moment: CateringMoment) => {
+  const addCateringMoment = useCallback((woId: string, partnerId: string, moment: CateringMoment) => {
     setCateringPlans((prev) => {
-      const plan = prev[woId] ?? { ...emptyCatering }
+      const plan = prev[woId]?.[partnerId] ?? { ...emptyCatering }
       return {
         ...prev,
         [woId]: {
-          ...plan,
-          status: plan.status === "ei_aloitettu" ? "luonnos" : plan.status,
-          moments: [...plan.moments, moment].sort((a, b) =>
-            a.startTime.localeCompare(b.startTime)
-          ),
+          ...(prev[woId] ?? {}),
+          [partnerId]: {
+            ...plan,
+            status: plan.status === "ei_aloitettu" ? "luonnos" : plan.status,
+            moments: [...plan.moments, moment].sort((a, b) =>
+              a.startTime.localeCompare(b.startTime)
+            ),
+          },
         },
       }
     })
   }, [])
 
   const updateCateringMoment = useCallback(
-    (woId: string, momentId: string, updates: Partial<CateringMoment>) => {
+    (woId: string, partnerId: string, momentId: string, updates: Partial<CateringMoment>) => {
       setCateringPlans((prev) => {
-        const plan = prev[woId]
+        const plan = prev[woId]?.[partnerId]
         if (!plan) return prev
         return {
           ...prev,
           [woId]: {
-            ...plan,
-            moments: plan.moments.map((m) =>
-              m.id === momentId ? { ...m, ...updates } : m
-            ),
+            ...(prev[woId] ?? {}),
+            [partnerId]: {
+              ...plan,
+              moments: plan.moments.map((m) =>
+                m.id === momentId ? { ...m, ...updates } : m
+              ),
+            },
           },
         }
       })
@@ -211,13 +237,16 @@ export function WorkOrderProvider({ children }: { children: ReactNode }) {
     []
   )
 
-  const removeCateringMoment = useCallback((woId: string, momentId: string) => {
+  const removeCateringMoment = useCallback((woId: string, partnerId: string, momentId: string) => {
     setCateringPlans((prev) => {
-      const plan = prev[woId]
+      const plan = prev[woId]?.[partnerId]
       if (!plan) return prev
       return {
         ...prev,
-        [woId]: { ...plan, moments: plan.moments.filter((m) => m.id !== momentId) },
+        [woId]: {
+          ...(prev[woId] ?? {}),
+          [partnerId]: { ...plan, moments: plan.moments.filter((m) => m.id !== momentId) },
+        },
       }
     })
   }, [])
@@ -250,6 +279,7 @@ export function WorkOrderProvider({ children }: { children: ReactNode }) {
         updateScheduleItem,
         removeScheduleItem,
         getCateringPlan,
+        getAllCateringPlans,
         updateCateringPlan,
         addCateringMoment,
         updateCateringMoment,

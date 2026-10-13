@@ -7,6 +7,7 @@ import { useCurrentWorkOrder } from "@/hooks/useCurrentWorkOrder"
 import { useWorkOrders } from "@/context/WorkOrderContext"
 import type { AVProduction } from "@/data/types"
 import { useMode } from "@/context/ModeContext"
+import { useTeam } from "@/context/TeamContext"
 import { cn } from "@/lib/utils"
 
 const PROPOSAL_META: Record<string, { label: string; badge: string }> = {
@@ -48,6 +49,7 @@ export function RightPanel() {
   const location = useLocation()
   const lastSegment = location.pathname.split("/").pop() ?? ""
   const { mode } = useMode()
+  const { members } = useTeam()
   const isSeller = mode === "seller"
   const isCatering = lastSegment === "catering"
   const isCateringSeller = isCatering && isSeller
@@ -78,11 +80,13 @@ export function RightPanel() {
   }, [wo.proposalSections, workOrderId, updateWorkOrder])
 
   const allProposals = wo.proposalSections ?? []
-  const proposals = isCatering
+  const proposals = isCateringSeller
+    ? allProposals.filter((p) => p.sectionKey === "catering")
+    : isCateringPartner
     ? allProposals.filter((p) => p.sectionKey.startsWith("catering-"))
     : isAV
     ? allProposals.filter((p) => p.sectionKey === "av" || p.sectionKey.startsWith("av-"))
-    : allProposals.filter((p) => !p.sectionKey.startsWith("catering-") && p.sectionKey !== "av" && !p.sectionKey.startsWith("av-"))
+    : allProposals.filter((p) => p.sectionKey !== "catering" && !p.sectionKey.startsWith("catering-") && p.sectionKey !== "av" && !p.sectionKey.startsWith("av-"))
   const hasDrafts = proposals.some((p) => p.status === "draft")
 
   const cateringPlan = getCateringPlan(workOrderId)
@@ -103,11 +107,25 @@ export function RightPanel() {
       return { ...p, status: "sent" as const, sentAt: nowStr, deadline }
     })
     if (isCateringSeller) {
+      const cateringItems = wo.eventDays.flatMap((d) => d.scheduleItems).filter((si) => si.type === "catering")
+      const moments = cateringItems.map((si) => ({
+        id: si.id, title: si.title, startTime: si.startTime, endTime: si.endTime,
+        spaceName: si.spaceName, menuId: "", menuName: "", price: 0, status: "luonnos" as const,
+      }))
+      const sellerNotes = wo.sectionNotes?.["catering-seller"] ?? ""
+      const cateringPartners = members.filter((m) => m.role === "Catering")
+      for (const partner of cateringPartners) {
+        updateCateringPlan(workOrderId, partner.id, {
+          status: "kumppanilla", moments,
+          participantCount: wo.participantEstimate,
+          dietaryNeeds: wo.accessibilityNeeds ?? "",
+          notes: `${wo.eventDescription ?? ""}\n\n${sellerNotes}`.trim(),
+        })
+      }
       updateWorkOrder(workOrderId, { proposalSections: updated })
-      updateCateringPlan(workOrderId, { status: "kumppanilla" })
     } else if (isCateringPartner) {
       updateWorkOrder(workOrderId, { proposalSections: updated })
-      updateCateringPlan(workOrderId, { status: "vastattu" })
+      updateCateringPlan(workOrderId, mode, { status: "vastattu" })
     } else if (isAVSeller) {
       const avBase: AVProduction = wo.avProduction ?? { status: "ei_aloitettu", needs: [], productionAreas: [], totalPrice: 0, notes: "" }
       updateWorkOrder(workOrderId, { proposalSections: updated, avProduction: { ...avBase, status: "kumppanilla" } })
@@ -135,11 +153,19 @@ export function RightPanel() {
         return {
           lines: allScheduleItems.slice(0, 5).map((i) => ({ label: i.title, value: `${i.startTime}–${i.endTime}` })),
         }
-      case "catering":
+      case "catering": {
+        if (isCateringSeller) {
+          const cateringItems = allScheduleItems.filter((si) => si.type === "catering")
+          const sellerNotes = wo.sectionNotes?.["catering-seller"]
+          const lines = cateringItems.map((si) => ({ label: si.title, value: si.startTime }))
+          if (sellerNotes) lines.push({ label: "Huomiot", value: "✓" })
+          return { lines }
+        }
         return {
           lines: cateringPlan.moments.map((m) => ({ label: m.title, value: formatPrice(m.price) })),
           total: cateringPlan.moments.reduce((sum, m) => sum + m.price, 0),
         }
+      }
       case "lisapalvelut": {
         const avProd = wo.avProduction
         if (avProd && (avProd.status === "valmis" || avProd.status === "vastattu")) {

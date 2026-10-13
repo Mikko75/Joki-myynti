@@ -510,7 +510,7 @@ export const workOrders: WorkOrder[] = [
 export const cateringPlan: CateringPlan = {
   id: 'cp-1',
   eventDayId: 'ed-1',
-  partnerId: 'partner-1',
+  partnerId: 'partner-catering',
   status: 'luonnos',
   participantCount: 300,
   dietaryNeeds: 'Esim. kasvis, gluteeniton',
@@ -532,7 +532,7 @@ const P = (id: string, name: string, desc: string, price: number, unit: string, 
 export const menus: Menu[] = [
   // ── MAUNO ──────────────────────────────────────────────
   {
-    id: 'menu-m-kahvi', partnerId: 'partner-1', name: 'Maunon Kahvimenu', category: 'Kahvitarjoilu',
+    id: 'menu-m-kahvi', partnerId: 'partner-catering', name: 'Maunon Kahvimenu', category: 'Kahvitarjoilu',
     description: 'Kahvit, teet, virvokkeet, makeat ja pienet suolaiset kokouksiisi!',
     pricePerPerson: 0, status: 'aktiivinen',
     products: [
@@ -552,7 +552,7 @@ export const menus: Menu[] = [
     ],
   },
   {
-    id: 'menu-m-breakfast', partnerId: 'partner-1', name: 'Breakfast Mauno', category: 'Aamiainen',
+    id: 'menu-m-breakfast', partnerId: 'partner-catering', name: 'Breakfast Mauno', category: 'Aamiainen',
     description: 'Maunon parempi aamiainen',
     pricePerPerson: 25.00, status: 'aktiivinen',
     products: [
@@ -562,7 +562,7 @@ export const menus: Menu[] = [
     ],
   },
   {
-    id: 'menu-m-buffet', partnerId: 'partner-1', name: 'Buffet Mauno', category: 'Lounas',
+    id: 'menu-m-buffet', partnerId: 'partner-catering', name: 'Buffet Mauno', category: 'Lounas',
     description: 'Salaatit, kasvisruoka, alkuruoat ja jälkiruoka',
     pricePerPerson: 0, status: 'aktiivinen',
     products: [
@@ -581,7 +581,7 @@ export const menus: Menu[] = [
     ],
   },
   {
-    id: 'menu-m-cafe', partnerId: 'partner-1', name: 'Cafe Mauno', category: 'Kahvitarjoilu',
+    id: 'menu-m-cafe', partnerId: 'partner-catering', name: 'Cafe Mauno', category: 'Kahvitarjoilu',
     description: 'Iltapäivän ja koko päivän kahvipaketit, piiraat ja leivonnaiset',
     pricePerPerson: 0, status: 'aktiivinen',
     products: [
@@ -602,7 +602,7 @@ export const menus: Menu[] = [
     ],
   },
   {
-    id: 'menu-m-drinks', partnerId: 'partner-1', name: 'Drinks Mauno', category: 'Juomat',
+    id: 'menu-m-drinks', partnerId: 'partner-catering', name: 'Drinks Mauno', category: 'Juomat',
     description: 'Viinit',
     pricePerPerson: 0, status: 'aktiivinen',
     products: [
@@ -611,7 +611,7 @@ export const menus: Menu[] = [
     ],
   },
   {
-    id: 'menu-m-joulu', partnerId: 'partner-1', name: 'Joulu Mauno', category: 'Sesonki',
+    id: 'menu-m-joulu', partnerId: 'partner-catering', name: 'Joulu Mauno', category: 'Sesonki',
     description: 'Joulusesongin tuotteet',
     pricePerPerson: 0, status: 'aktiivinen',
     products: [
@@ -620,7 +620,7 @@ export const menus: Menu[] = [
     ],
   },
   {
-    id: 'menu-m-sauna', partnerId: 'partner-1', name: 'Sauna Mauno', category: 'Saunatilaisuus',
+    id: 'menu-m-sauna', partnerId: 'partner-catering', name: 'Sauna Mauno', category: 'Saunatilaisuus',
     description: 'Saunatilaisuuden menut',
     pricePerPerson: 0, status: 'aktiivinen',
     products: [
@@ -635,7 +635,7 @@ export const menus: Menu[] = [
     ],
   },
   {
-    id: 'menu-m-additional', partnerId: 'partner-1', name: 'Additional Mauno', category: 'Lisäpalvelut',
+    id: 'menu-m-additional', partnerId: 'partner-catering', name: 'Additional Mauno', category: 'Lisäpalvelut',
     description: 'Baaripalvelut ja lisäpalvelut',
     pricePerPerson: 0, status: 'aktiivinen',
     products: [
@@ -660,7 +660,7 @@ export const cateringProviders: CateringProvider[] = [
 export const unicaMenus: Menu[] = [
   // ── UNICA ──────────────────────────────────────────────
   {
-    id: 'menu-u-kahvi', partnerId: 'partner-2', name: 'Unican Kahvimenu', category: 'Kahvitarjoilu',
+    id: 'menu-u-kahvi', partnerId: 'partner-unica', name: 'Unican Kahvimenu', category: 'Kahvitarjoilu',
     description: 'Voit koota kahvitarjoiluvalikoimasta mieluisan kokonaisuuden.',
     pricePerPerson: 0, status: 'aktiivinen',
     products: [
@@ -673,7 +673,7 @@ export const unicaMenus: Menu[] = [
     ],
   },
   {
-    id: 'menu-u-after', partnerId: 'partner-2', name: 'After Unica', category: 'Salaattibuffet',
+    id: 'menu-u-after', partnerId: 'partner-unica', name: 'After Unica', category: 'Salaattibuffet',
     description: 'Salaattibuffetin täydennystuotteet',
     pricePerPerson: 0, status: 'aktiivinen',
     products: [
@@ -682,7 +682,7 @@ export const unicaMenus: Menu[] = [
     ],
   },
   {
-    id: 'menu-u-cafe', partnerId: 'partner-2', name: 'Cafe Unica', category: 'Kahvitarjoilu',
+    id: 'menu-u-cafe', partnerId: 'partner-unica', name: 'Cafe Unica', category: 'Kahvitarjoilu',
     description: 'Kahvilan makeat ja suolaiset tuotteet, smoothiet ja juomat',
     pricePerPerson: 0, status: 'aktiivinen',
     products: [
@@ -707,7 +707,7 @@ export const unicaMenus: Menu[] = [
     ],
   },
   {
-    id: 'menu-u-cocktail', partnerId: 'partner-2', name: 'Cocktail Unica', category: 'Cocktail / iltatilaisuus',
+    id: 'menu-u-cocktail', partnerId: 'partner-unica', name: 'Cocktail Unica', category: 'Cocktail / iltatilaisuus',
     description: 'Cocktail-tilaisuuden makeat ja suolaiset',
     pricePerPerson: 0, status: 'aktiivinen',
     products: [
@@ -723,7 +723,7 @@ export const unicaMenus: Menu[] = [
     ],
   },
   {
-    id: 'menu-u-drinks', partnerId: 'partner-2', name: 'Drinks Unica', category: 'Juomat',
+    id: 'menu-u-drinks', partnerId: 'partner-unica', name: 'Drinks Unica', category: 'Juomat',
     description: 'Viinit ja alkoholittomat',
     pricePerPerson: 0, status: 'aktiivinen',
     products: [
@@ -737,7 +737,7 @@ export const unicaMenus: Menu[] = [
     ],
   },
   {
-    id: 'menu-u-sauna', partnerId: 'partner-2', name: 'Sauna Unica', category: 'Saunatilaisuus',
+    id: 'menu-u-sauna', partnerId: 'partner-unica', name: 'Sauna Unica', category: 'Saunatilaisuus',
     description: 'Saunatilaisuuden piirakat',
     pricePerPerson: 0, status: 'aktiivinen',
     products: [

@@ -21,11 +21,25 @@ export function TopBar({ breadcrumbs }: TopBarProps) {
   const navigate = useNavigate()
   const location = useLocation()
   const { members } = useTeam()
-  const { workOrders } = useWorkOrders()
+  const { workOrders, getAllCateringPlans } = useWorkOrders()
   const { mode } = useMode()
   const isSeller = mode === "seller"
   const [showSaved, setShowSaved] = useState(false)
   const [inviteOpen, setInviteOpen] = useState(false)
+  const [bellOpen, setBellOpen] = useState(false)
+
+  const notifications: { woId: string; woNumber: string; partnerName: string }[] = []
+  if (isSeller) {
+    for (const wo of workOrders) {
+      const plans = getAllCateringPlans(wo.id)
+      for (const [pid, p] of Object.entries(plans)) {
+        if (p.status === "vastattu") {
+          const partner = members.find((m) => m.id === pid)
+          notifications.push({ woId: wo.id, woNumber: wo.number, partnerName: partner?.name ?? pid })
+        }
+      }
+    }
+  }
 
   const isInsideWorkOrder = location.pathname.includes("/tyomarain/")
 
@@ -101,9 +115,37 @@ export function TopBar({ breadcrumbs }: TopBarProps) {
         <button className="flex items-center justify-center rounded-lg size-8 text-[#66707a] hover:text-gray-900 hover:bg-gray-100 transition-colors">
           <Search className="h-5 w-5" />
         </button>
-        <button className="flex items-center justify-center rounded-lg size-8 text-[#66707a] hover:text-gray-900 hover:bg-gray-100 transition-colors">
-          <Bell className="h-5 w-5" />
-        </button>
+        <div className="relative">
+          <button
+            onClick={() => setBellOpen(!bellOpen)}
+            className="flex items-center justify-center rounded-lg size-8 text-[#66707a] hover:text-gray-900 hover:bg-gray-100 transition-colors"
+          >
+            <Bell className="h-5 w-5" />
+            {notifications.length > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">
+                {notifications.length}
+              </span>
+            )}
+          </button>
+          {bellOpen && notifications.length > 0 && (
+            <div className="absolute right-0 top-10 z-50 w-72 rounded-xl border border-gray-200 bg-white shadow-lg py-2">
+              <p className="px-4 py-1 text-[11px] font-semibold text-gray-500 uppercase">Ilmoitukset</p>
+              {notifications.map((n, i) => (
+                <button
+                  key={i}
+                  onClick={() => { navigate(`/tyomarain/${n.woId}/catering`); setBellOpen(false) }}
+                  className="flex w-full items-start gap-3 px-4 py-2.5 text-left hover:bg-gray-50 transition-colors"
+                >
+                  <span className="mt-0.5 h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+                  <div>
+                    <p className="text-[13px] font-medium text-gray-900">{n.partnerName} lähetti catering-ehdotuksen</p>
+                    <p className="text-[11px] text-gray-500">{n.woNumber}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         {displayAvatars.length > 0 && (
           <div className="flex items-start overflow-hidden">
