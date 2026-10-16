@@ -8,6 +8,7 @@ import { CustomerEnrichmentProvider } from '@/context/CustomerEnrichmentContext'
 import { TemplateProvider } from '@/context/TemplateContext'
 import { ModeSwitcher } from '@/components/layout/ModeSwitcher'
 import { MainLayout } from '@/components/layout/MainLayout'
+import { MainSidebar } from '@/components/layout/MainSidebar'
 import KanbanPage from '@/pages/KanbanPage'
 import CalendarPage from '@/pages/CalendarPage'
 import NewLeadWrapper from '@/pages/NewLeadWrapper'
@@ -26,16 +27,19 @@ export default function App() {
             <BrowserRouter>
               <div className="flex flex-col h-screen">
                 <ModeSwitcher />
-                <div className="flex-1 overflow-hidden">
-                  <Routes>
-                    <Route element={<MainLayout />}>
-                      <Route index element={<KanbanPage />} />
-                      <Route path="/kalenteri" element={<CalendarPage />} />
-                      <Route path="/asiakkaat" element={<CustomersPage />} />
-                    </Route>
-                    <Route path="/uusi-liidi" element={<NewLeadWrapper />} />
-                    <Route path="/tyomarain/:id/*" element={<ModeRouter />} />
-                  </Routes>
+                <div className="flex flex-1 overflow-hidden">
+                  <MainSidebar />
+                  <div className="flex-1 overflow-hidden">
+                    <Routes>
+                      <Route element={<MainLayout />}>
+                        <Route index element={<KanbanPage />} />
+                        <Route path="/kalenteri" element={<CalendarPage />} />
+                        <Route path="/asiakkaat" element={<CustomersPage />} />
+                      </Route>
+                      <Route path="/uusi-liidi" element={<NewLeadWrapper />} />
+                      <Route path="/tyomarain/:id/*" element={<ModeRouter />} />
+                    </Routes>
+                  </div>
                 </div>
               </div>
             </BrowserRouter>

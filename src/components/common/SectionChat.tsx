@@ -107,14 +107,14 @@ export function SectionChat({ sectionKey }: SectionChatProps) {
               }
             }}
           />
-          <button className="p-2 text-primary-600 hover:text-primary-700 transition-colors">
+          <button className="p-2 text-gray-500 hover:text-gray-900 transition-colors">
             <Mic className="h-5 w-5" />
           </button>
-          <button className="p-2 text-primary-600 hover:text-primary-700 transition-colors">
+          <button className="p-2 text-gray-500 hover:text-gray-900 transition-colors">
             <Paperclip className="h-5 w-5" />
           </button>
           <button
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-600 text-white hover:bg-primary-700 transition-colors shrink-0"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-900 text-white hover:bg-gray-800 transition-colors shrink-0"
             onClick={handleSend}
           >
             <Send className="h-4 w-4" />

@@ -110,7 +110,7 @@ export const workOrders: WorkOrder[] = [
     isCompetitiveBid: true,
     additionalNotes: 'Asiakas vertailee Finlandia-taloon. Nopea vastaus tärkeä.',
     participants: [
-      { id: 'p-1', name: 'Matti Virtanen', role: 'Tapahtuma koordinaattori', initials: 'MV', color: '#3b82f6' },
+      { id: 'p-1', name: 'Matti Virtanen', role: 'Tapahtuma koordinaattori', initials: 'MV', color: '#111827' },
       { id: 'p-2', name: 'Anna Korhonen', role: 'Catering', initials: 'AK', color: '#22c55e' },
     ],
     eventDays: [
@@ -151,7 +151,7 @@ export const workOrders: WorkOrder[] = [
     nextStep: 'Tarvekartoitus',
     sectionStatuses: { tila: 'kaynnissa', catering: 'ei_aloitettu', av: 'ei_aloitettu' },
     participants: [
-      { id: 'p-3', name: 'Liisa Mäkinen', role: 'Yhteyshenkilö', initials: 'LM', color: '#3b82f6' },
+      { id: 'p-3', name: 'Liisa Mäkinen', role: 'Yhteyshenkilö', initials: 'LM', color: '#111827' },
     ],
     eventDays: [
       {
@@ -187,7 +187,7 @@ export const workOrders: WorkOrder[] = [
     nextStep: 'Suunnittelu & optio',
     sectionStatuses: { tila: 'valmis', catering: 'kaynnissa', av: 'ei_aloitettu' },
     participants: [
-      { id: 'p-4', name: 'Jukka Lahtinen', role: 'Yhteyshenkilö', initials: 'JL', color: '#3b82f6' },
+      { id: 'p-4', name: 'Jukka Lahtinen', role: 'Yhteyshenkilö', initials: 'JL', color: '#111827' },
     ],
     eventDays: [
       {
@@ -223,7 +223,7 @@ export const workOrders: WorkOrder[] = [
     nextStep: 'Lähetä tarjous',
     sectionStatuses: { tila: 'valmis', catering: 'valmis', av: 'valmis' },
     participants: [
-      { id: 'p-5', name: 'Maria Niemi', role: 'Yhteyshenkilö', initials: 'MN', color: '#3b82f6' },
+      { id: 'p-5', name: 'Maria Niemi', role: 'Yhteyshenkilö', initials: 'MN', color: '#111827' },
     ],
     eventDays: [
       {
@@ -259,7 +259,7 @@ export const workOrders: WorkOrder[] = [
     nextStep: 'Sopimus & varaus',
     sectionStatuses: { tila: 'valmis', catering: 'valmis', av: 'valmis' },
     participants: [
-      { id: 'p-6', name: 'Tero Koskinen', role: 'Yhteyshenkilö', initials: 'TK', color: '#3b82f6' },
+      { id: 'p-6', name: 'Tero Koskinen', role: 'Yhteyshenkilö', initials: 'TK', color: '#111827' },
     ],
     eventDays: [
       {

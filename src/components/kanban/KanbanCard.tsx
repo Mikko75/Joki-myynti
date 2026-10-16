@@ -17,10 +17,10 @@ export const statusLabels: Record<WorkOrderStatus, string> = {
 }
 
 export const statusBadgeColors: Record<WorkOrderStatus, string> = {
-  uusi: 'bg-[#e5e7eb] text-[#374151]',
-  tyonalla: 'bg-amber-100 text-amber-800',
-  asiakkaalla: 'bg-purple-100 text-purple-800',
-  vahvistettu: 'bg-emerald-100 text-emerald-800',
+  uusi: 'bg-blue-100 text-blue-700',
+  tyonalla: 'bg-amber-100 text-amber-700',
+  asiakkaalla: 'bg-purple-100 text-purple-700',
+  vahvistettu: 'bg-emerald-100 text-emerald-700',
   ei_toteudu: 'bg-gray-100 text-gray-500',
 }
 

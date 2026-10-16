@@ -41,7 +41,7 @@ const sectionIcons: Record<string, LucideIcon> = {
   lisapalvelut: PlusCircle,
 }
 
-const AVATAR_COLORS = ["#26ad61", "#f59e0a", "#384ff7"]
+const AVATAR_COLORS = ["#7c3aed", "#111827", "#22c55e"]
 
 export function UnifiedLayout() {
   const { id } = useParams<{ id: string }>()
@@ -134,11 +134,8 @@ export function UnifiedLayout() {
       {sidebarExpanded ? (
         <aside className={cn("flex flex-col bg-white shrink-0 overflow-hidden", SIDEBAR_SHADOW_CLASS, SIDEBAR_WIDTH_CLASS)}>
           <div className="flex flex-col gap-6 p-4 flex-1 overflow-hidden">
-            {/* Logo + collapse toggle */}
-            <div className="flex items-center justify-between">
-              <Link to="/" className={LOGO_LINK_CLASS}>
-                JOKI
-              </Link>
+            {/* Collapse toggle */}
+            <div className="flex items-center justify-end">
               <button
                 onClick={toggleSidebar}
                 className={TOGGLE_BUTTON_CLASS}
@@ -165,9 +162,6 @@ export function UnifiedLayout() {
 
             {/* Nav Section */}
             <div className="flex flex-col gap-5 flex-1 overflow-y-auto">
-              <p className={SECTION_LABEL_CLASS}>
-                NAVIGAATIO
-              </p>
               <nav className="flex flex-col gap-1">
                 {navItems.map((item) => {
                   const Icon = item.icon
@@ -185,7 +179,6 @@ export function UnifiedLayout() {
                       )}
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <Icon className={cn(NAV_ICON_CLASS, item.iconColor)} />
                         <span className="truncate">{item.label}</span>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
@@ -214,26 +207,9 @@ export function UnifiedLayout() {
             </div>
           </div>
 
-          {/* User info at bottom */}
-          <div className={USER_FOOTER_CLASS}>
-            <div className="flex items-center gap-3">
-              <div className={USER_AVATAR_CLASS}>
-                ML
-              </div>
-              <div className="min-w-0">
-                <p className={USER_NAME_CLASS}>Mikko Lesonen</p>
-                <p className={USER_ROLE_CLASS}>Ylläpitäjä</p>
-              </div>
-            </div>
-          </div>
         </aside>
       ) : (
         <aside className={cn("flex flex-col items-center bg-white shrink-0 overflow-hidden py-4", SIDEBAR_SHADOW_CLASS)}>
-          {/* Collapsed: logo icon */}
-          <Link to="/" className={LOGO_ICON_CLASS}>
-            J
-          </Link>
-
           {/* Expand toggle */}
           <button
             onClick={toggleSidebar}
@@ -243,30 +219,6 @@ export function UnifiedLayout() {
             <ChevronsRight className="h-5 w-5" />
           </button>
 
-          {/* Nav icons */}
-          <nav className="flex flex-col gap-6 items-center flex-1 px-3">
-            {navItems.map((item) => {
-              const Icon = item.icon
-              const isActive = lastSegment === item.id
-              return (
-                <Link
-                  key={item.id}
-                  to={`/tyomarain/${id}/${item.id}`}
-                  className={cn(COLLAPSED_NAV_ITEM_CLASS, isActive && COLLAPSED_NAV_ITEM_ACTIVE_CLASS)}
-                  title={item.label}
-                >
-                  <Icon className={cn("h-6 w-6", item.iconColor)} />
-                </Link>
-              )
-            })}
-          </nav>
-
-          {/* User avatar at bottom */}
-          <div className="px-3 mt-auto">
-            <div className={USER_AVATAR_CLASS}>
-              ML
-            </div>
-          </div>
         </aside>
       )}
 

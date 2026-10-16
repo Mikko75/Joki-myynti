@@ -191,9 +191,7 @@ export default function OverviewPage() {
                   const Icon = item.icon
                   return (
                     <div key={item.label} className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 shrink-0">
-                        <Icon className="h-5 w-5 text-gray-400" />
-                      </div>
+                      <Icon className="h-5 w-5 text-gray-400 shrink-0" />
                       <div className="min-w-0">
                         <p className="text-[11px] text-gray-500">{item.label}</p>
                         <p className="text-[13px] font-semibold text-gray-900 truncate">{item.value}</p>

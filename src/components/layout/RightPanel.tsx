@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { useLocation } from "react-router-dom"
-import { X, Send, ChevronDown, ChevronUp, PanelRightClose, PanelRightOpen, CheckCircle2, Clock, RotateCcw } from "lucide-react"
+import { X, Send, ChevronDown, ChevronUp, PanelRightClose, PanelRightOpen, CheckCircle2, Clock, RotateCcw, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useCurrentWorkOrder } from "@/hooks/useCurrentWorkOrder"
@@ -393,7 +393,8 @@ export function RightPanel() {
           })}
         </div>
       ) : (
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex flex-col items-center justify-center gap-3">
+          <img src="/puthere.png" alt="" className="h-14 w-auto opacity-80" />
           <p className="text-[12px] text-gray-400 text-center">Lisää osioita ehdotukseen<br />painamalla + korteista</p>
         </div>
       )}
