@@ -23,7 +23,8 @@ const AREA_ICONS: Record<string, typeof Mic> = {
 }
 
 export default function ProposalView({ workOrderId }: { workOrderId: string }) {
-  const { getWorkOrder, updateWorkOrder, getCateringPlan, getAVPlan } = useWorkOrders()
+  const { getWorkOrder, updateWorkOrder, getAllCateringPlans, getAVPlan } = useWorkOrders()
+  const [activeCateringTab, setActiveCateringTab] = useState<string | null>(null)
   const { menus } = useMenus()
   const workOrder = getWorkOrder(workOrderId)
   const [commentFor, setCommentFor] = useState<string | null>(null)
@@ -40,7 +41,8 @@ export default function ProposalView({ workOrderId }: { workOrderId: string }) {
     && !p.sectionKey.startsWith("av-")
     && p.sectionKey !== "av"
   )
-  const cateringPlan = getCateringPlan(workOrderId)
+  const allCateringPlans = getAllCateringPlans(workOrderId)
+  const cateringOptions = Object.entries(allCateringPlans).filter(([pid, p]) => pid !== "_default" && p.status === "valmis")
   const avPlan = getAVPlan(workOrderId)
   const allApproved = proposals.length > 0 && proposals.every((p) => p.status === "approved")
 
@@ -237,64 +239,96 @@ export default function ProposalView({ workOrderId }: { workOrderId: string }) {
       )}
 
       {/* CATERING */}
-      {getProposal("catering") && cateringPlan.moments.length > 0 && (
-        <Card>
-          <div className="flex items-center justify-between mb-3">
-            <CardTitle>Catering</CardTitle>
-            <Badge className={cn("text-[10px]", STATUS_META[getProposal("catering")!.status].badge)}>
-              {STATUS_META[getProposal("catering")!.status].label}
-            </Badge>
-          </div>
-          <div className="space-y-4">
-            {(() => {
-              const moments = cateringPlan.moments
-              const grouped: Record<string, typeof moments> = {}
-              for (const m of moments) {
-                const key = `${m.title}__${m.startTime}__${m.endTime}`
-                if (!grouped[key]) grouped[key] = []
-                grouped[key].push(m)
-              }
-              return Object.entries(grouped).map(([key, group]) => {
-                const first = group[0]
-                const isVariants = group.length > 1
-                return (
-                  <div key={key}>
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-[14px] font-semibold text-gray-900">{first.title}</p>
-                      <span className="text-[12px] text-gray-500">{first.startTime}–{first.endTime}</span>
+      {getProposal("catering") && cateringOptions.length > 0 && (() => {
+        const proposal = getProposal("catering")!
+        const selectedTab = activeCateringTab ?? cateringOptions[0]?.[0] ?? null
+        const activePlan = selectedTab ? allCateringPlans[selectedTab] : null
+        const isApproved = proposal.status === "approved"
+        const chosenPartnerId = proposal.clientComment?.startsWith("valittu:") ? proposal.clientComment.replace("valittu:", "") : null
+
+        return (
+          <Card>
+            <div className="flex items-center justify-between mb-4">
+              <CardTitle>Catering</CardTitle>
+              <Badge className={cn("text-[10px]", STATUS_META[proposal.status].badge)}>
+                {STATUS_META[proposal.status].label}
+              </Badge>
+            </div>
+
+            {/* Tabit — näytetään vain jos useampi vaihtoehto */}
+            {cateringOptions.length > 1 && (
+              <div className="flex border-b border-gray-200 mb-4">
+                {cateringOptions.map(([pid], i) => {
+                  const isActive = selectedTab === pid
+                  const isChosen = chosenPartnerId === pid
+                  return (
+                    <button
+                      key={pid}
+                      type="button"
+                      onClick={() => setActiveCateringTab(pid)}
+                      className={cn(
+                        "px-4 pb-2.5 text-[13px] font-medium border-b-2 transition-colors flex items-center gap-1.5",
+                        isActive ? "border-primary-600 text-primary-600" : "border-transparent text-gray-500 hover:text-gray-700"
+                      )}
+                    >
+                      Vaihtoehto {String.fromCharCode(65 + i)}
+                      {isChosen && <span className="text-emerald-500">✓</span>}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* Aktiivisen vaihtoehdon sisältö */}
+            {activePlan && (
+              <div className="space-y-4">
+                {activePlan.moments.map((m) => {
+                  const products = m.proposalProducts ?? menus.find((mn) => mn.name === m.menuName)?.products.map((p) => ({ productId: p.id, name: p.name, unitPrice: p.unitPrice, unit: p.unit, quantity: 1 })) ?? []
+                  return (
+                    <div key={m.id} className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-[14px] font-semibold text-gray-900">{m.title}</p>
+                        <span className="text-[12px] text-gray-500">{m.startTime}{m.endTime && m.endTime !== m.startTime ? `–${m.endTime}` : ""}</span>
+                      </div>
+                      {m.menuName && <p className="text-[12px] font-medium text-emerald-700 mb-2"><UtensilsCrossed className="h-3 w-3 inline mr-1" />{m.menuName}</p>}
+                      {products.length > 0 && (
+                        <div className="space-y-1">
+                          {products.map((p) => (
+                            <div key={p.productId} className="flex items-center justify-between text-[12px]">
+                              <span className="text-gray-700">{p.name}</span>
+                              {p.unitPrice > 0 && <span className="text-gray-500">{p.unitPrice.toLocaleString("fi-FI")} €/{p.unit}</span>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <div className={cn("grid gap-3", isVariants ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1")}>
-                      {group.map((m, i) => {
-                        const selectedMenu = m.menuName ? menus.find((mn) => mn.name === m.menuName) : null
-                        const products = m.proposalProducts ?? selectedMenu?.products.map((p) => ({ productId: p.id, name: p.name, unitPrice: p.unitPrice, unit: p.unit, quantity: 1 })) ?? []
-                        return (
-                          <div key={m.id} className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-                            {isVariants && (
-                              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-2">Vaihtoehto {String.fromCharCode(65 + i)}</p>
-                            )}
-                            {m.menuName && <p className="text-[13px] font-semibold text-gray-900 mb-2">{m.menuName}</p>}
-                            {products.length > 0 && (
-                              <div className="space-y-1">
-                                {products.map((p) => (
-                                  <div key={p.productId} className="flex items-center justify-between text-[12px]">
-                                    <span className="text-gray-700">{p.name}</span>
-                                    {p.unitPrice > 0 && <span className="text-gray-500">{p.unitPrice.toLocaleString("fi-FI")} €/{p.unit}</span>}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )
-              })
-            })()}
-          </div>
-          {renderActions("catering")}
-        </Card>
-      )}
+                  )
+                })}
+
+                {/* Valitse tämä vaihtoehto — vain jos useampi ja ei vielä hyväksytty */}
+                {cateringOptions.length > 1 && !isApproved && selectedTab && (
+                  <Button
+                    className="w-full"
+                    onClick={() => {
+                      const updated = (wo.proposalSections ?? []).map((p) =>
+                        p.sectionKey === "catering"
+                          ? { ...p, status: "approved" as const, clientComment: `valittu:${selectedTab}` }
+                          : p
+                      )
+                      updateWorkOrder(workOrderId, { proposalSections: updated })
+                    }}
+                  >
+                    Valitse tämä vaihtoehto
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {/* Normaali hyväksy/muutoksia — vain yksi vaihtoehto tai jo valittu */}
+            {(cateringOptions.length === 1 || isApproved) && renderActions("catering")}
+          </Card>
+        )
+      })()}
 
       {/* LISÄPALVELUT & AV */}
       {getProposal("lisapalvelut") && (

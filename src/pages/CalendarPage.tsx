@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useMode, SELLER_MODE } from '@/context/ModeContext'
 import {
   startOfMonth,
@@ -86,8 +86,15 @@ export default function CalendarPage() {
   }
   const { workOrders } = useWorkOrders()
 
-  // Default to October 2025 where mock events exist
-  const [currentDate, setCurrentDate] = useState(() => new Date(2025, 9, 1))
+  const [searchParams] = useSearchParams()
+  const [currentDate, setCurrentDate] = useState(() => {
+    const dateParam = searchParams.get("date")
+    if (dateParam) {
+      const d = new Date(dateParam)
+      if (!isNaN(d.getTime())) return d
+    }
+    return new Date(2025, 9, 1)
+  })
   const [viewMode, setViewMode] = useState<ViewMode>('month')
 
   // Derive calendar events from all work orders

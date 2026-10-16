@@ -6,13 +6,17 @@ import {
   MoreHorizontal,
   ChevronDown,
   Search,
+  ArrowRight,
+  UtensilsCrossed,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 import { KanbanBoard } from '@/components/kanban/KanbanBoard'
 import { useState } from 'react'
 import { useMode } from '@/context/ModeContext'
 import { useWorkOrders } from '@/context/WorkOrderContext'
+import { useTeam } from '@/context/TeamContext'
 import NewLeadPage from './NewLeadPage'
 import type { NewLeadFormData } from './NewLeadPage'
 import type { WorkOrder, EventSource, ScheduleItem } from '@/data/types'
@@ -47,12 +51,102 @@ const sourceMap: Record<string, EventSource> = {
   "muu": "web",
 }
 
+const STATUS_LABELS = {
+  uusi: "Uusi liidi",
+  tyonalla: "Työn alla",
+  asiakkaalla: "Asiakkaalla",
+  vahvistettu: "Vahvistettu",
+  ei_toteudu: "Ei toteudu",
+}
+
+const SOURCE_LABELS = {
+  web: "Web",
+  sahkoposti: "Sähköposti",
+  puhelin: "Puhelin",
+}
+
+const CATERING_STATUS_META: Record<string, { label: string; badge: string; dot: string }> = {
+  kumppanilla: { label: "Odottaa vastaustasi", badge: "bg-amber-100 text-amber-700", dot: "bg-amber-400" },
+  luonnos:     { label: "Luonnos kesken",       badge: "bg-gray-100 text-gray-600",   dot: "bg-gray-400" },
+  vastattu:    { label: "Lähetetty myyjälle",   badge: "bg-blue-100 text-blue-700",   dot: "bg-blue-400" },
+  valmis:      { label: "Valittu",              badge: "bg-emerald-100 text-emerald-700", dot: "bg-emerald-500" },
+}
+
+const STATUS_ORDER: Record<string, number> = { kumppanilla: 0, luonnos: 1, vastattu: 2, valmis: 3 }
+
 export default function KanbanPage() {
   const navigate = useNavigate()
   const { mode } = useMode()
-  const { addWorkOrder } = useWorkOrders()
+  const { addWorkOrder, workOrders, getCateringPlan } = useWorkOrders()
+  const { members } = useTeam()
 
   const [clientSent, setClientSent] = useState(false)
+  const [statusFilter, setStatusFilter] = useState<string | null>(null)
+  const [sourceFilter, setSourceFilter] = useState<string | null>(null)
+  const [searchText, setSearchText] = useState("")
+  const [statusOpen, setStatusOpen] = useState(false)
+  const [sourceOpen, setSourceOpen] = useState(false)
+
+  // ── Kumppanin postilaatikko ──────────────────────────────────────
+  if (mode.startsWith("partner-")) {
+    const member = members.find((m) => m.id === mode)
+    const isCatering = member?.role === "Catering"
+
+    const myOrders = workOrders
+      .map((wo) => ({ wo, plan: getCateringPlan(wo.id, mode) }))
+      .filter(({ plan }) => plan.status !== "ei_aloitettu")
+      .sort((a, b) => (STATUS_ORDER[a.plan.status] ?? 9) - (STATUS_ORDER[b.plan.status] ?? 9))
+
+    return (
+      <div className="p-6 lg:p-8 max-w-3xl">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100">
+            <UtensilsCrossed className="h-5 w-5 text-emerald-600" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">{member?.name ?? mode}</h1>
+            <p className="text-[13px] text-gray-500">Omat toimeksiannot</p>
+          </div>
+        </div>
+
+        {myOrders.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-gray-300 p-12 text-center">
+            <p className="text-[14px] font-medium text-gray-500">Ei avoimia toimeksiantoja</p>
+            <p className="text-[12px] text-gray-400 mt-1">Uudet pyynnöt ilmestyvät tähän kun myyjä lähettää catering-briiffin.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {myOrders.map(({ wo, plan }) => {
+              const meta = CATERING_STATUS_META[plan.status] ?? CATERING_STATUS_META.luonnos
+              const eventDate = wo.eventDays[0]?.date ?? "–"
+              const route = isCatering ? "catering" : "av"
+              return (
+                <div
+                  key={wo.id}
+                  className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-5 hover:border-gray-300 transition-colors cursor-pointer"
+                  onClick={() => navigate(`/tyomarain/${wo.id}/${route}`)}
+                >
+                  <div className="flex items-start gap-3">
+                    <span className={`mt-1.5 h-2.5 w-2.5 rounded-full shrink-0 ${meta.dot}`} />
+                    <div>
+                      <p className="text-[15px] font-semibold text-gray-900">{wo.eventName ?? wo.eventType}</p>
+                      <p className="text-[12px] text-gray-500 mt-0.5">
+                        {wo.customerCompany} · {eventDate} · {wo.participantEstimate} hlö
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge className={`text-[11px] ${meta.badge}`}>{meta.label}</Badge>
+                    <ArrowRight className="h-4 w-4 text-gray-400" />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   if (mode === "client") {
     if (clientSent) {
@@ -142,53 +236,82 @@ export default function KanbanPage() {
     <div className="p-6 lg:p-8">
       <h1 className="text-2xl font-bold text-gray-900">Työmääräimet</h1>
 
-      <div className="mt-5 flex flex-wrap items-center gap-2">
+      {/* Toimintorivi */}
+      <div className="mt-5 flex items-center gap-2">
         <Button className="rounded-lg" onClick={() => navigate('/uusi-liidi')}>
           <CirclePlus className="h-4 w-4" />
           Uusi työmääräin
         </Button>
-        <Button variant="outline" className="rounded-lg">
-          <SlidersHorizontal className="h-4 w-4" />
-          Suodattimet
-        </Button>
-        <Button variant="outline" className="rounded-lg">
-          <User className="h-4 w-4" />
-          Näytä omat
-        </Button>
-        <Button variant="outline" size="icon" className="rounded-lg">
-          <MoreHorizontal className="h-4 w-4" />
-        </Button>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <Button variant="outline" size="sm" className="rounded-lg text-gray-600">
-          Kaikki tilat
-          <ChevronDown className="h-3 w-3 ml-1" />
-        </Button>
-        <Button variant="outline" size="sm" className="rounded-lg text-gray-600">
-          Kaikki myyjät
-          <ChevronDown className="h-3 w-3 ml-1" />
-        </Button>
-        <Button variant="outline" size="sm" className="rounded-lg text-gray-600">
-          Kaikki lähteet
-          <ChevronDown className="h-3 w-3 ml-1" />
-        </Button>
-        <Button variant="outline" size="sm" className="rounded-lg text-gray-600">
-          Kaikki päivämäärät
-          <ChevronDown className="h-3 w-3 ml-1" />
-        </Button>
+      {/* Filtteririvi — suoraan kanbantaulun yläpuolella */}
+      <div className="mt-3 flex items-center gap-2">
+        {/* Tila-filtteri */}
+        <div className="relative">
+          <Button
+            variant="outline"
+            size="sm"
+            className={`rounded-lg ${statusFilter ? "border-primary-400 text-primary-600 bg-primary-50" : "text-gray-600"}`}
+            onClick={() => { setStatusOpen(!statusOpen); setSourceOpen(false) }}
+          >
+            {statusFilter ? STATUS_LABELS[statusFilter as keyof typeof STATUS_LABELS] : "Kaikki tilat"}
+            <ChevronDown className="h-3 w-3 ml-1" />
+          </Button>
+          {statusOpen && (
+            <div className="absolute top-full left-0 mt-1 z-50 min-w-40 rounded-lg border border-gray-200 bg-white shadow-lg py-1">
+              <button className="block w-full px-3 py-1.5 text-left text-[13px] text-gray-600 hover:bg-gray-50" onClick={() => { setStatusFilter(null); setStatusOpen(false) }}>Kaikki tilat</button>
+              {Object.entries(STATUS_LABELS).map(([val, label]) => (
+                <button key={val} className={`block w-full px-3 py-1.5 text-left text-[13px] hover:bg-gray-50 ${statusFilter === val ? "text-primary-600 font-medium" : "text-gray-700"}`} onClick={() => { setStatusFilter(val); setStatusOpen(false) }}>{label}</button>
+              ))}
+            </div>
+          )}
+        </div>
 
-        <div className="ml-auto relative">
+        {/* Lähde-filtteri */}
+        <div className="relative">
+          <Button
+            variant="outline"
+            size="sm"
+            className={`rounded-lg ${sourceFilter ? "border-primary-400 text-primary-600 bg-primary-50" : "text-gray-600"}`}
+            onClick={() => { setSourceOpen(!sourceOpen); setStatusOpen(false) }}
+          >
+            {sourceFilter ? SOURCE_LABELS[sourceFilter as keyof typeof SOURCE_LABELS] : "Kaikki lähteet"}
+            <ChevronDown className="h-3 w-3 ml-1" />
+          </Button>
+          {sourceOpen && (
+            <div className="absolute top-full left-0 mt-1 z-50 min-w-36 rounded-lg border border-gray-200 bg-white shadow-lg py-1">
+              <button className="block w-full px-3 py-1.5 text-left text-[13px] text-gray-600 hover:bg-gray-50" onClick={() => { setSourceFilter(null); setSourceOpen(false) }}>Kaikki lähteet</button>
+              {Object.entries(SOURCE_LABELS).map(([val, label]) => (
+                <button key={val} className={`block w-full px-3 py-1.5 text-left text-[13px] hover:bg-gray-50 ${sourceFilter === val ? "text-primary-600 font-medium" : "text-gray-700"}`} onClick={() => { setSourceFilter(val); setSourceOpen(false) }}>{label}</button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Haku */}
+        <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <Input
-            placeholder="Etsi työmääräimistä..."
-            className="pl-9 w-64 rounded-lg"
+            placeholder="Etsi..."
+            className="pl-9 w-48 rounded-lg"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
           />
         </div>
+
+        {/* Nollaa filtterit */}
+        {(statusFilter || sourceFilter || searchText) && (
+          <button
+            onClick={() => { setStatusFilter(null); setSourceFilter(null); setSearchText("") }}
+            className="text-[12px] text-gray-400 hover:text-gray-600"
+          >
+            Tyhjennä
+          </button>
+        )}
       </div>
 
       <div className="mt-6">
-        <KanbanBoard />
+        <KanbanBoard statusFilter={statusFilter} sourceFilter={sourceFilter} searchText={searchText} />
       </div>
 
       <div className="mt-4 flex items-center gap-5 text-xs text-gray-500">

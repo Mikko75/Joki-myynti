@@ -35,7 +35,7 @@ export default function CateringPage() {
 
   const plan = getCateringPlan(workOrderId)
   const partnerPlans = getAllCateringPlans(workOrderId)
-  const respondedPartners = Object.entries(partnerPlans).filter(([, p]) => p.status === "vastattu" || p.status === "valmis")
+  const respondedPartners = Object.entries(partnerPlans).filter(([pid, p]) => pid !== "_default" && (p.status === "vastattu" || p.status === "valmis"))
   const displayPartnerId = activePartnerId ?? respondedPartners[0]?.[0] ?? null
   const displayPlan = displayPartnerId ? partnerPlans[displayPartnerId] : null
   const allProposals = workOrder.proposalSections ?? []
@@ -81,6 +81,39 @@ export default function CateringPage() {
       {/* Kumppanien ehdotukset — tabit + sisältö KESKELLÄ */}
       {respondedPartners.length > 0 && (
         <div className="space-y-4">
+          {/* Ohjeet myyjälle — kun useampi vaihtoehto saapunut */}
+          {respondedPartners.length > 1 && respondedPartners.every(([, p]) => p.status !== "valmis") && (
+            <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-5 space-y-3">
+              <p className="text-[13px] font-semibold text-blue-900">Sinulla on {respondedPartners.length} catering-ehdotusta — mitä haluat tehdä?</p>
+              <div className="space-y-2 text-[12px] text-blue-800">
+                <div className="flex items-start gap-2">
+                  <span className="font-bold shrink-0">Vaihtoehto 1:</span>
+                  <span>Selaa tabeista kummankin ehdotus ja paina <strong>Valitse tämä ehdotus</strong> — vain valittu lähetetään asiakkaalle.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="font-bold shrink-0">Vaihtoehto 2:</span>
+                  <span>Lähetä molemmat asiakkaalle — asiakas vertailee ja valitsee itse kumman haluaa.</span>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  respondedPartners.forEach(([pid]) => updateCateringPlan(workOrderId, pid, { status: "valmis" }))
+                }}
+              >
+                Lähetä molemmat asiakkaalle
+              </Button>
+            </div>
+          )}
+
+          {/* Kun yksi vaihtoehto saapunut */}
+          {respondedPartners.length === 1 && respondedPartners[0][1].status !== "valmis" && (
+            <div className="rounded-lg border border-blue-100 bg-blue-50/50 px-4 py-3">
+              <p className="text-[12px] text-blue-800">Tarkista ehdotus ja paina <strong>Valitse tämä ehdotus</strong> hyväksyäksesi sen, tai <strong>Pyydä muutoksia</strong> palataksesi kumppanille.</p>
+            </div>
+          )}
+
           {respondedPartners.length > 1 && (
             <div className="flex border-b border-gray-200">
               {respondedPartners.map(([pid, p]) => {
@@ -111,6 +144,8 @@ export default function CateringPage() {
               partnerName={members.find((m) => m.id === displayPartnerId)?.name ?? displayPartnerId}
               onSelect={() => updateCateringPlan(workOrderId, displayPartnerId, { status: "valmis" })}
               onRequestChanges={() => updateCateringPlan(workOrderId, displayPartnerId, { status: "kumppanilla" })}
+              inProposal={proposalKeys.has("catering")}
+              onAddToProposal={addCateringToProposal}
             />
           )}
         </div>
@@ -307,11 +342,13 @@ export default function CateringPage() {
 // ---------------------------------------------------------------------------
 // Kumppanin ehdotuksen tarkastelu — read-only, keskisisältö
 // ---------------------------------------------------------------------------
-function PartnerProposalView({ plan, partnerName, onSelect, onRequestChanges }: {
+function PartnerProposalView({ plan, partnerName, onSelect, onRequestChanges, onAddToProposal, inProposal }: {
   plan: CateringPlanState
   partnerName: string
   onSelect: () => void
   onRequestChanges: () => void
+  onAddToProposal: () => void
+  inProposal: boolean
 }) {
   const overallTotal = plan.moments.reduce((sum, m) => {
     return sum + (m.proposalProducts ?? []).reduce((s, p) => s + p.unitPrice * p.quantity, 0)
@@ -377,12 +414,33 @@ function PartnerProposalView({ plan, partnerName, onSelect, onRequestChanges }: 
         })}
       </div>
 
-      {plan.status !== "valmis" && (
-        <div className="border-t border-gray-100 px-6 py-4 flex items-center gap-3">
-          <Button onClick={onSelect}>Valitse tämä ehdotus</Button>
-          <Button variant="outline" onClick={onRequestChanges}>Pyydä muutoksia</Button>
-        </div>
-      )}
+      <div className="border-t border-gray-100 px-6 py-4 flex items-center gap-3">
+        {plan.status !== "valmis" ? (
+          <>
+            <Button onClick={onSelect}>Valitse tämä ehdotus</Button>
+            <Button variant="outline" onClick={onRequestChanges}>Pyydä muutoksia</Button>
+          </>
+        ) : (
+          <>
+            <Badge className="bg-emerald-100 text-emerald-700 text-[12px] px-3 py-1.5">Valittu ehdotus</Badge>
+            {inProposal ? (
+              <span className="text-[12px] text-emerald-600 font-medium flex items-center gap-1">
+                <Sparkles className="h-3.5 w-3.5" /> Lisätty asiakasehdotukseen
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={onAddToProposal}
+                className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-[12px] font-medium text-gray-600 hover:border-primary-300 hover:text-primary-600 transition-colors"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Lisää asiakasehdotukseen
+              </button>
+            )}
+            <Button variant="outline" size="sm" onClick={onRequestChanges}>Pyydä muutoksia</Button>
+          </>
+        )}
+      </div>
     </div>
   )
 }

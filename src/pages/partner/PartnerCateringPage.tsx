@@ -24,15 +24,16 @@ export default function PartnerCateringPage() {
   const [expandedMomentId, setExpandedMomentId] = useState<string | null>(null)
   const [menuCategoryFilter, setMenuCategoryFilter] = useState<string | null>(null)
 
-  const proposals = workOrder?.proposalSections ?? []
+  const allProposals = workOrder?.proposalSections ?? []
+  const proposals = allProposals.filter((p) => !p.partnerId || p.partnerId === partnerId)
   const proposalKeys = new Set(proposals.map((p) => p.sectionKey))
 
   function addMomentToProposal(momentId: string) {
     if (!workOrder) return
     const key = `catering-${momentId}`
     if (proposalKeys.has(key)) return
-    const entry: ProposalSection = { sectionKey: key, sentAt: null, status: "draft" }
-    updateWorkOrder(woId, { proposalSections: [...proposals, entry] })
+    const entry: ProposalSection = { sectionKey: key, sentAt: null, status: "draft", partnerId }
+    updateWorkOrder(woId, { proposalSections: [...allProposals, entry] })
   }
 
   if (!workOrder) return <p className="text-gray-500">Ei löytynyt.</p>
@@ -44,10 +45,23 @@ export default function PartnerCateringPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-900">Ruoka & Juoma (Catering)</h1>
-        <Badge variant={plan.moments.length > 0 ? "blue" : "outline"}>
-          {plan.moments.length > 0 ? "Luonnos" : "Ei aloitettu"}
+        <Badge variant={plan.status === "valmis" ? "success" : plan.moments.length > 0 ? "blue" : "outline"}>
+          {plan.status === "valmis" ? "Valittu" : plan.moments.length > 0 ? "Luonnos" : "Ei aloitettu"}
         </Badge>
       </div>
+
+      {/* Ilmoitus myyjältä — ehdotus valittu */}
+      {plan.status === "valmis" && (
+        <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 shrink-0">
+            <span className="text-emerald-600 text-[16px]">✓</span>
+          </div>
+          <div>
+            <p className="text-[14px] font-semibold text-gray-900">Myyjä on valinnut ehdotuksesi</p>
+            <p className="mt-0.5 text-[12px] text-gray-600">Ehdotuksesi sisällytetään asiakkaalle lähetettävään tarjoukseen.</p>
+          </div>
+        </div>
+      )}
 
       {/* Tapahtuman tiedot — read-only */}
       <div className="rounded-xl border border-gray-200 bg-white p-6 space-y-4">
@@ -103,6 +117,19 @@ export default function PartnerCateringPage() {
         <div className="rounded-xl border border-gray-200 bg-white p-6">
           <h3 className="text-[14px] font-semibold text-gray-900 mb-2">Erityisruokavaliot</h3>
           <p className="text-[13px] text-gray-700">{plan.dietaryNeeds}</p>
+        </div>
+      )}
+
+      {/* Ohjeet kumppanille */}
+      {plan.status !== "vastattu" && plan.status !== "valmis" && (
+        <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-5 space-y-2">
+          <p className="text-[13px] font-semibold text-blue-900">Näin rakennat ehdotuksen</p>
+          <ol className="text-[12px] text-blue-800 space-y-1 list-decimal list-inside">
+            <li>Lisää tarjoiluhetket aikataulun catering-kohtien pohjalta (tai luo uusia)</li>
+            <li>Valitse jokaiselle hetkelle sopiva menu omista menuistasi</li>
+            <li>Tarvittaessa lisää tai poista yksittäisiä tuotteita</li>
+            <li>Kun ehdotus on valmis, lisää hetket sidebariin (+) ja paina <strong>Lähetä myyjälle</strong></li>
+          </ol>
         </div>
       )}
 

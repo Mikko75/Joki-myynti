@@ -42,7 +42,7 @@ const PROPOSAL_STATUS_META: Record<string, { label: string; badge: string }> = {
 
 export default function OverviewPage() {
   const { workOrder, workOrderId } = useCurrentWorkOrder()
-  const { getCateringPlan, getAVPlan, updateWorkOrder } = useWorkOrders()
+  const { getCateringPlan, getAllCateringPlans, getAVPlan, updateWorkOrder } = useWorkOrders()
   const { getMembersForSection } = useTeam()
 
   const [emptyWarning, setEmptyWarning] = useState<string | null>(null)
@@ -70,13 +70,21 @@ export default function OverviewPage() {
   const allSpaces = wo.eventDays.flatMap((d) => d.spaces)
   const allScheduleItems = wo.eventDays.flatMap((d) => d.scheduleItems)
   const cateringPlan = getCateringPlan(workOrderId)
+  const allCateringPlans = getAllCateringPlans(workOrderId)
+  const hasCateringData = cateringPlan.moments.length > 0 || Object.values(allCateringPlans).some((p) => p.status === "valmis" || p.status === "vastattu" || p.moments.length > 0)
   const avPlan = getAVPlan(workOrderId)
   const eventDate = wo.eventDays[0]?.date
   const customSections = wo.customSections ?? []
 
   const scheduleStatus: SectionStatus = allScheduleItems.length === 0 ? "ei_aloitettu" : allScheduleItems.every((i) => i.status === "valmis") ? "valmis" : "kaynnissa"
   const tila = SECTION_STATUS_META[wo.sectionStatuses.tila]
-  const cateringMeta = SECTION_STATUS_META[wo.sectionStatuses.catering]
+  const cateringPartnerSelected = Object.values(allCateringPlans).some((p) => p.status === "valmis")
+  const cateringPartnerResponded = Object.values(allCateringPlans).some((p) => p.status === "vastattu" || p.status === "valmis")
+  const cateringMeta = cateringPartnerSelected
+    ? { label: "Valmis", badge: "bg-emerald-100 text-emerald-700", progress: 100 }
+    : cateringPartnerResponded
+    ? { label: "Tarkistettavana", badge: "bg-blue-100 text-blue-700", progress: 70 }
+    : SECTION_STATUS_META[wo.sectionStatuses.catering]
   const av = SECTION_STATUS_META[wo.sectionStatuses.av]
   const aikataulu = SECTION_STATUS_META[scheduleStatus]
   const avNeeds = wo.avProduction?.needs ?? []
@@ -84,20 +92,25 @@ export default function OverviewPage() {
   const sectionHasData: Record<string, boolean> = {
     tilat: allSpaces.length > 0,
     aikataulu: allScheduleItems.length > 0,
-    catering: cateringPlan.moments.length > 0,
+    catering: hasCateringData,
     lisapalvelut: wo.avProduction?.status === "valmis" || avNeeds.length > 0 || Boolean(avPlan.microphones || avPlan.audio || avPlan.screens || (avPlan.price ?? 0) > 0),
     ...Object.fromEntries(customSections.map((cs) => [`custom-${cs.id}`, cs.description.length > 0])),
   }
 
   function addToProposal(key: string) {
-    if (proposalKeys.has(key)) return
     if (!sectionHasData[key]) {
       setEmptyWarning(key)
       setTimeout(() => setEmptyWarning(null), 3000)
       return
     }
-    const entry: ProposalSection = { sectionKey: key, sentAt: null, status: "draft" }
-    updateWorkOrder(workOrderId, { proposalSections: [...proposals, entry] })
+    const existing = proposals.find((p) => p.sectionKey === key)
+    if (existing) {
+      // Resetoi draft-tilaan uudelleenlähetystä varten
+      updateWorkOrder(workOrderId, { proposalSections: proposals.map((p) => p.sectionKey === key ? { ...p, status: "draft" as const, sentAt: null } : p) })
+    } else {
+      const entry: ProposalSection = { sectionKey: key, sentAt: null, status: "draft" }
+      updateWorkOrder(workOrderId, { proposalSections: [...proposals, entry] })
+    }
   }
 
   function addCustomSection(type: string, label: string) {
@@ -201,6 +214,7 @@ export default function OverviewPage() {
             const proposalMeta = proposal ? PROPOSAL_STATUS_META[proposal.status] : null
 
             const inProposal = proposalKeys.has(s.key)
+            const hasDraft = proposal?.status === "draft"
 
             return (
               <div key={s.key} className="relative">
@@ -216,7 +230,7 @@ export default function OverviewPage() {
                   members={getMembersForSection(s.key)}
                   dateLabel={eventDate}
                 />
-                {!inProposal && (
+                {!hasDraft && (
                   <div className="absolute top-4 right-4 z-10">
                     {emptyWarning === s.key && (
                       <div className="absolute bottom-full right-0 mb-1.5 w-56 flex items-start gap-3 rounded-md border-l-4 border-amber-500 bg-amber-50 p-4 shadow-sm">

@@ -5,7 +5,13 @@ import { kanbanColumns } from '@/data/mock'
 import { useWorkOrders } from '@/context/WorkOrderContext'
 import { useMode, SELLER_MODE } from '@/context/ModeContext'
 
-export function KanbanBoard() {
+interface KanbanBoardProps {
+  statusFilter?: string | null
+  sourceFilter?: string | null
+  searchText?: string
+}
+
+export function KanbanBoard({ statusFilter, sourceFilter, searchText }: KanbanBoardProps = {}) {
   const navigate = useNavigate()
   const { workOrders } = useWorkOrders()
   const { setMode, setModeInfo } = useMode()
@@ -16,10 +22,15 @@ export function KanbanBoard() {
     navigate(`/tyomarain/${id}`)
   }
 
+  const filtered = workOrders
+    .filter((wo) => !statusFilter || wo.status === statusFilter)
+    .filter((wo) => !sourceFilter || wo.source === sourceFilter)
+    .filter((wo) => !searchText || [wo.customerCompany, wo.customerName, wo.eventType].some((s) => s?.toLowerCase().includes(searchText.toLowerCase())))
+
   return (
     <div className="flex gap-5 overflow-x-auto pb-6 -mx-2 px-2">
       {kanbanColumns.map((column) => {
-        const columnOrders = workOrders.filter((wo) => wo.status === column.status)
+        const columnOrders = filtered.filter((wo) => wo.status === column.status)
 
         return (
           <KanbanColumn

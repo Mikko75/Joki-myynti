@@ -83,13 +83,13 @@ export function RightPanel() {
   const proposals = isCateringSeller
     ? allProposals.filter((p) => p.sectionKey === "catering")
     : isCateringPartner
-    ? allProposals.filter((p) => p.sectionKey.startsWith("catering-"))
+    ? allProposals.filter((p) => p.sectionKey.startsWith("catering-") && (!p.partnerId || p.partnerId === mode))
     : isAV
     ? allProposals.filter((p) => p.sectionKey === "av" || p.sectionKey.startsWith("av-"))
-    : allProposals.filter((p) => p.sectionKey !== "catering" && !p.sectionKey.startsWith("catering-") && p.sectionKey !== "av" && !p.sectionKey.startsWith("av-"))
+    : allProposals.filter((p) => p.sectionKey !== "av" && !p.sectionKey.startsWith("av-") && !p.sectionKey.startsWith("catering-"))
   const hasDrafts = proposals.some((p) => p.status === "draft")
 
-  const cateringPlan = getCateringPlan(workOrderId)
+  const cateringPlan = isCateringPartner ? getCateringPlan(workOrderId, mode) : getCateringPlan(workOrderId)
   const avPlan = getAVPlan(workOrderId)
   const allSpaces = wo.eventDays.flatMap((d) => d.spaces)
   const allScheduleItems = wo.eventDays.flatMap((d) => d.scheduleItems)
@@ -230,7 +230,7 @@ export function RightPanel() {
     <aside className="hidden lg:flex w-80 shrink-0 flex-col overflow-y-auto border-l border-gray-200 p-5" style={{ backgroundColor: "#F8FAFC" }}>
       <div className="flex items-center justify-between">
         <h3 className="text-[15px] font-semibold text-gray-900">
-          {isCateringSeller || isAVSeller ? "Ehdotus kumppanille" : isPartnerPage ? (hasDrafts ? "Ehdotus myyjälle" : "Myyjältä saatu") : "Ehdotus asiakkaalle"}
+          {isCateringSeller || isAVSeller ? "Ehdotus kumppanille" : isPartnerPage ? "Ehdotus myyjälle" : "Ehdotus asiakkaalle"}
         </h3>
         <button onClick={() => setIsOpen(false)} className="p-1 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100 transition-colors" title="Sulje">
           <PanelRightClose className="h-4 w-4" />
@@ -240,7 +240,7 @@ export function RightPanel() {
       <p className="text-[11px] text-gray-400 mt-1 mb-4">
         {isCateringSeller ? "Lisää tarjoiluhetkiä (+) ja lähetä kumppanille."
           : isAVSeller ? "Lisää AV-osioita (+) ja lähetä kumppanille."
-          : isPartnerPage ? (hasDrafts ? "Muokkaa ja lähetä takaisin myyjälle." : "Myyjän lähettämä pyyntö.")
+          : isPartnerPage ? "Lisää (+) ja lähetä ehdotus myyjälle."
           : "Lisää osioita kortteista (+) ja lähetä ehdotus."}
       </p>
 

@@ -6,6 +6,7 @@ export interface ProposalSection {
   status: ProposalSectionStatus
   clientComment?: string
   deadline?: string
+  partnerId?: string
 }
 
 export type WorkOrderStatus =
