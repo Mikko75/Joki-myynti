@@ -131,9 +131,7 @@ export default function SpacesPage() {
               return (
                 <div
                   key={space.id}
-                  className={`relative rounded-xl border bg-white overflow-hidden transition-all ${
-                    isSelected ? "border-emerald-300 ring-1 ring-emerald-200 bg-emerald-50/30" : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
-                  }`}
+                  className="relative rounded-xl border border-gray-200 bg-white overflow-hidden transition-all hover:border-gray-300 hover:shadow-sm"
                 >
                   {space.image && (
                     <div className="h-36 w-full overflow-hidden">

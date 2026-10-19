@@ -1,11 +1,12 @@
 import { Link, useLocation } from "react-router-dom"
-import { LayoutGrid, Users, CalendarDays, Settings } from "lucide-react"
+import { LayoutGrid, Users, CalendarDays, Settings, FileEdit } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
   { id: "tyomaarain", label: "Työmääräin", icon: LayoutGrid, to: "/" },
   { id: "asiakkaat", label: "Asiakkaat", icon: Users, to: "/asiakkaat" },
   { id: "kalenteri", label: "Kalenteri", icon: CalendarDays, to: "/kalenteri" },
+  { id: "lomake", label: "Tarjouspyyntölomake", icon: FileEdit, to: "/lomake" },
   { id: "asetukset", label: "Asetukset", icon: Settings, to: "/" },
 ]
 

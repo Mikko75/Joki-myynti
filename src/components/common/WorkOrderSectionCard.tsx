@@ -25,6 +25,7 @@ interface WorkOrderSectionCardProps {
   badgeClassName: string
   badgeIcon?: ReactNode
   progress: number
+  progressColor?: string
   hideProgress?: boolean
   description: string
   members?: CardMember[]
@@ -42,6 +43,7 @@ export function WorkOrderSectionCard({
   badgeClassName,
   badgeIcon,
   progress,
+  progressColor,
   hideProgress,
   description,
   members = [],
@@ -80,7 +82,7 @@ export function WorkOrderSectionCard({
           </div>
           <div className="mt-1.5 h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
             <div
-              className="h-full rounded-full bg-primary-600 transition-all"
+              className={cn("h-full rounded-full transition-all", progressColor ?? "bg-primary-600")}
               style={{ width: `${progress}%` }}
             />
           </div>

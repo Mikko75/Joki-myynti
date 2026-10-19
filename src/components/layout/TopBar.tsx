@@ -28,15 +28,20 @@ export function TopBar({ breadcrumbs }: TopBarProps) {
   const [inviteOpen, setInviteOpen] = useState(false)
   const [bellOpen, setBellOpen] = useState(false)
 
-  const notifications: { woId: string; woNumber: string; partnerName: string }[] = []
+  const notifications: { woId: string; woNumber: string; label: string }[] = []
   if (isSeller) {
     for (const wo of workOrders) {
+      // Catering-kumppanin ehdotus
       const plans = getAllCateringPlans(wo.id)
       for (const [pid, p] of Object.entries(plans)) {
         if (p.status === "vastattu") {
           const partner = members.find((m) => m.id === pid)
-          notifications.push({ woId: wo.id, woNumber: wo.number, partnerName: partner?.name ?? pid })
+          notifications.push({ woId: wo.id, woNumber: wo.number, label: `${partner?.name ?? pid} lähetti catering-ehdotuksen` })
         }
+      }
+      // Asiakas päivitti tietojaan
+      if (wo.clientUpdatedAt) {
+        notifications.push({ woId: wo.id, woNumber: wo.number, label: "Asiakas päivitti tapahtuman tietoja" })
       }
     }
   }
@@ -138,7 +143,7 @@ export function TopBar({ breadcrumbs }: TopBarProps) {
                 >
                   <span className="mt-0.5 h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
                   <div>
-                    <p className="text-[13px] font-medium text-gray-900">{n.partnerName} lähetti catering-ehdotuksen</p>
+                    <p className="text-[13px] font-medium text-gray-900">{n.label}</p>
                     <p className="text-[11px] text-gray-500">{n.woNumber}</p>
                   </div>
                 </button>

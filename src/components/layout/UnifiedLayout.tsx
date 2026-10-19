@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Outlet, useParams, useLocation, Link } from "react-router-dom"
 import {
   LayoutDashboard, DoorOpen, CalendarDays, UtensilsCrossed, PlusCircle,
-  Video, MessageSquare, FileText, ChevronsLeft, ChevronsRight,
+  Video, MessageSquare, FileText, ChevronsLeft, ChevronsRight, Edit3,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { TopBar } from "./TopBar"
@@ -73,7 +73,10 @@ export function UnifiedLayout() {
   if (isSeller) {
     navItems = sellerNav
   } else if (isClient) {
-    navItems = [{ id: "asiakas", label: "Tarjous", icon: FileText }]
+    navItems = [
+      { id: "ehdotus", label: "Tarjous", icon: FileText },
+      { id: "oma-pyynto", label: "Oma pyyntöni", icon: Edit3 },
+    ]
   } else if (isPartner) {
     const member = members.find((m) => m.id === mode)
     const sectionKeys = member ? getMemberSectionKeys(member.id) : []

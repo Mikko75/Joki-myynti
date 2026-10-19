@@ -19,6 +19,7 @@ import ClientPortal from "@/pages/client/ClientPortal"
 import InvitePage from "@/pages/work-order/InvitePage"
 import PerustiedotPage from "@/pages/work-order/PerustiedotPage"
 import ProposalView from "@/pages/client/ProposalView"
+import CustomerRequestPage from "@/pages/client/CustomerRequestPage"
 import CustomSectionPage from "@/pages/work-order/CustomSectionPage"
 
 function ClientPortalPage() {
@@ -67,6 +68,7 @@ export function ModeRouter() {
         <Route path="kutsu" element={<InvitePage />} />
         <Route path="asiakas" element={<ClientPortalPage />} />
         <Route path="ehdotus" element={<ProposalViewPage />} />
+        <Route path="oma-pyynto" element={<CustomerRequestPage />} />
         <Route path="tilat" element={<SpacesPage />} />
         <Route path="aikataulu" element={<ScheduleRouter />} />
         <Route path="catering" element={<CateringRouter />} />

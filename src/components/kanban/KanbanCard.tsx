@@ -156,6 +156,13 @@ export function KanbanCard({ workOrder, onClick }: KanbanCardProps) {
         </div>
       )}
 
+      {/* Source badge — varausjärjestelmä korostettuna */}
+      {workOrder.source === 'varausjarjestelma' && (
+        <div className="flex">
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">Varausjärjestelmä</span>
+        </div>
+      )}
+
       {/* Footer: avatars + date + calendar link */}
       <div className="flex items-center gap-2">
         {/* Participant avatars */}

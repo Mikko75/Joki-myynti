@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils"
 
 export interface NewLeadFormData {
   source: string
+  selectedSpace?: string
   company: string
   contactPerson: string
   email: string
@@ -54,11 +55,14 @@ export interface NewLeadFormData {
   budgetRange?: string
   vipGuests?: string
   scheduleNotes?: string
+  avDescription?: string
 }
 
 interface NewLeadPageProps {
   onSubmit?: (data: NewLeadFormData) => void
   onCancel?: () => void
+  initialData?: Partial<NewLeadFormData>
+  isLomake?: boolean
 }
 
 // ── Toggle group helper ────────────────────────────────────────────────────
@@ -92,7 +96,7 @@ function ToggleGroup<T extends string>({
             className={cn(
               "inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
               isSelected
-                ? "border-blue-500 bg-blue-50 text-blue-700"
+                ? "border-gray-900 bg-gray-900 text-white"
                 : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
             )}
           >
@@ -127,14 +131,13 @@ function FieldLabel({
 // ── Source options ──────────────────────────────────────────────────────────
 
 const DURATION_OPTIONS: ToggleOption<"single" | "multi">[] = [
-  { value: "single", label: "Yksi tapahtumapäivä" },
-  { value: "multi", label: "Useita päiviä" },
+  { value: "single", label: "Ei, yksi päivä" },
+  { value: "multi", label: "Kyllä, useita päiviä" },
 ]
 
 const CATERING_OPTIONS: ToggleOption<"yes" | "no" | "unknown">[] = [
   { value: "yes", label: "Kyllä" },
   { value: "no", label: "Ei" },
-  { value: "unknown", label: "En tiedä" },
 ]
 
 const AV_OPTIONS: ToggleOption<"yes" | "no">[] = [
@@ -144,12 +147,13 @@ const AV_OPTIONS: ToggleOption<"yes" | "no">[] = [
 
 // ── Page component ─────────────────────────────────────────────────────────
 
-export default function NewLeadPage({ onSubmit, onCancel }: NewLeadPageProps) {
+export default function NewLeadPage({ onSubmit, onCancel, initialData, isLomake }: NewLeadPageProps) {
   const { templates } = useTemplates()
   const { workOrders } = useWorkOrders()
   const { mode } = useMode()
   const isClient = mode === "client"
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null)
+  const [showSchedule, setShowSchedule] = useState(false)
 
   const existingCompanies = new Set(workOrders.map((wo) => wo.customerCompany))
   const companyOptions: ComboboxOption[] = companyDirectory.map((c) => ({
@@ -160,9 +164,10 @@ export default function NewLeadPage({ onSubmit, onCancel }: NewLeadPageProps) {
   }))
 
   const [formData, setFormData] = useState<NewLeadFormData>({
-    source: "web",
-    company: "",
-    contactPerson: "",
+    source: initialData?.source ?? "web",
+    selectedSpace: initialData?.selectedSpace ?? "",
+    company: initialData?.company ?? "",
+    contactPerson: initialData?.contactPerson ?? "",
     email: "",
     phone: "",
     eventName: "",
@@ -215,9 +220,9 @@ export default function NewLeadPage({ onSubmit, onCancel }: NewLeadPageProps) {
   }
 
   return (
-    <div className="h-full overflow-auto bg-gray-50">
-      {/* ── Header bar ─────────────────────────────────────────────── */}
-      <header className="border-b border-gray-200 bg-white px-6 py-3">
+    <div className={isLomake ? "" : "h-full overflow-auto bg-gray-50"}>
+      {/* ── Header bar — piilotetaan lomakesivulla ─────────────────── */}
+      <header className={isLomake ? "hidden" : "border-b border-gray-200 bg-white px-6 py-3"}>
         <div className="mx-auto flex max-w-4xl items-center justify-between">
           {/* Breadcrumb */}
           <nav className="flex items-center gap-1 text-sm text-gray-500">
@@ -295,7 +300,7 @@ export default function NewLeadPage({ onSubmit, onCancel }: NewLeadPageProps) {
         </div>
 
         {/* Pohjavalinta — vain myyjälle */}
-        {!isClient && (
+        {!isClient && !isLomake && (
         <div className="mb-6">
           <p className="text-[13px] font-medium text-gray-700 mb-2">Valitse pohja tai aloita tyhjästä</p>
           <div className="flex gap-2 flex-wrap">
@@ -323,7 +328,7 @@ export default function NewLeadPage({ onSubmit, onCancel }: NewLeadPageProps) {
         )}
 
         {/* Info banner — vain myyjälle */}
-        {!isClient && (
+        {!isClient && !isLomake && (
           <div className="mb-6">
             <InfoBanner>
               Kun tallennat lomakkeen, liidi luodaan kanban-näkymän sarakkeeseen
@@ -334,6 +339,18 @@ export default function NewLeadPage({ onSubmit, onCancel }: NewLeadPageProps) {
 
         {/* ── Form card ──────────────────────────────────────────── */}
         <form onSubmit={handleSubmit}>
+          {/* Varausjärjestelmästä esitäytetty tila */}
+          {formData.selectedSpace && (
+            <div className="mb-4 flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 px-5 py-4">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 shrink-0">
+                <span className="text-blue-600 text-[13px]">🏛</span>
+              </div>
+              <div>
+                <p className="text-[13px] font-semibold text-blue-900">Varausjärjestelmästä: {formData.selectedSpace}</p>
+                <p className="text-[12px] text-blue-700">Asiakas on valinnut tämän tilan varausjärjestelmässä. Tieto siirtyy automaattisesti työmääräimeen.</p>
+              </div>
+            </div>
+          )}
           <div className="rounded-xl border border-gray-200 bg-white p-8">
             <div className="space-y-6">
               {/* 1. Asiakas + Yhteyshenkilö ────────────────────── */}
@@ -411,83 +428,111 @@ export default function NewLeadPage({ onSubmit, onCancel }: NewLeadPageProps) {
               {/* Alustava ohjelma / aikataulu */}
               <div>
                 <FieldLabel number={7} label="Alustava ohjelma / aikataulu" />
-                <Textarea
-                  value={formData.scheduleNotes ?? ""}
-                  onChange={(e) => update("scheduleNotes", e.target.value)}
-                  placeholder={"Esim.\n09:00 Ovet avautuvat\n10:00 Keynote-puhe\n12:00 Lounas\n13:00 Paneelikeskustelu\n15:00 Kahvitauko\n18:00 Illallinen\n21:00 Live-musiikki"}
-                  rows={5}
-                />
-                <p className="mt-1 text-[11px] text-gray-400">Kirjoita yksi ohjelmahetki per rivi. Muoto: kellonaika + kuvaus.</p>
+                {isLomake ? (
+                  <>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      <button
+                        type="button"
+                        onClick={() => setShowSchedule(true)}
+                        className={cn(
+                          "inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
+                          showSchedule ? "border-gray-900 bg-gray-900 text-white" : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                        )}
+                      >
+                        Kyllä
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setShowSchedule(false); update("scheduleNotes", "") }}
+                        className={cn(
+                          "inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
+                          !showSchedule ? "border-gray-900 bg-gray-900 text-white" : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                        )}
+                      >
+                        Ei
+                      </button>
+                    </div>
+                    {showSchedule && (
+                      <div className="mt-3">
+                        <Textarea
+                          value={formData.scheduleNotes ?? ""}
+                          onChange={(e) => update("scheduleNotes", e.target.value)}
+                          placeholder={"Esim.\n09:00 Ovet avautuvat\n10:00 Keynote-puhe\n12:00 Lounas\n13:00 Paneelikeskustelu\n15:00 Kahvitauko\n18:00 Illallinen\n21:00 Live-musiikki"}
+                          rows={5}
+                          autoFocus
+                        />
+                        <p className="mt-1 text-[11px] text-gray-400">Kirjoita yksi ohjelmahetki per rivi. Muoto: kellonaika + kuvaus.</p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <Textarea
+                      value={formData.scheduleNotes ?? ""}
+                      onChange={(e) => update("scheduleNotes", e.target.value)}
+                      placeholder={"Esim.\n09:00 Ovet avautuvat\n10:00 Keynote-puhe\n12:00 Lounas\n13:00 Paneelikeskustelu\n15:00 Kahvitauko\n18:00 Illallinen\n21:00 Live-musiikki"}
+                      rows={5}
+                    />
+                    <p className="mt-1 text-[11px] text-gray-400">Kirjoita yksi ohjelmahetki per rivi. Muoto: kellonaika + kuvaus.</p>
+                  </>
+                )}
               </div>
 
-              {/* 8–9–10. Päivämäärä + Kellonaika + Osallistujat ── */}
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                {/* Päivämäärä */}
-                <div>
-                  <FieldLabel number={7} label="Päivämäärä" required />
-                  <div className="relative">
-                    <Input
-                      type="date"
-                      value={formData.date}
-                      onChange={(e) => update("date", e.target.value)}
-                      disabled={formData.dateOpen}
-                      placeholder="Valitse päivämäärä"
-                      className="pr-9"
-                    />
-                    <Calendar className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              {/* Catering + AV — heti aikataulun jälkeen lomakkeella */}
+              {isLomake && (
+                <>
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    <div>
+                      <FieldLabel number={8} label="Tarvitaanko catering?" required />
+                      <ToggleGroup
+                        options={CATERING_OPTIONS}
+                        value={formData.needsCatering}
+                        onChange={(v) => update("needsCatering", v)}
+                      />
+                    </div>
+                    <div>
+                      <FieldLabel number={9} label="Tarvitaanko AV / tekniikka?" required />
+                      <ToggleGroup
+                        options={AV_OPTIONS}
+                        value={formData.needsAV}
+                        onChange={(v) => update("needsAV", v)}
+                      />
+                    </div>
                   </div>
-                  <div className="mt-2 flex items-center gap-2">
-                    <Checkbox
-                      id="dateOpen"
-                      checked={formData.dateOpen}
-                      onCheckedChange={(checked) =>
-                        update("dateOpen", checked === true)
-                      }
-                    />
-                    <label
-                      htmlFor="dateOpen"
-                      className="text-sm text-gray-600"
-                    >
-                      Ajankohta avoin
-                    </label>
-                  </div>
-                </div>
 
-                {/* Osallistujamäärä */}
-                <div>
-                  <FieldLabel
-                    number={10}
-                    label="Arvioitu osallistujamäärä"
-                    required
-                  />
-                  <Input
-                    type="number"
-                    min={1}
-                    value={formData.participantEstimate}
-                    onChange={(e) =>
-                      update("participantEstimate", e.target.value)
-                    }
-                    placeholder="Esim. 120"
-                  />
-                </div>
-              </div>
+                  {/* Erikoisruokavaliot + kattaustoive — heti catering-togglen alla */}
+                  {formData.needsCatering === "yes" && (
+                    <div>
+                      <FieldLabel number={10} label="Erikoisruokavaliot" />
+                      <Input
+                        value={formData.dietaryNeeds ?? ""}
+                        onChange={(e) => update("dietaryNeeds", e.target.value)}
+                        placeholder="Esim. vegaani 10 hlö, gluteeniton 5 hlö"
+                      />
+                    </div>
+                  )}
+                  {formData.needsAV === "yes" && (
+                    <div>
+                      <FieldLabel number={11} label="Minkälaista tekniikkaa tarvitaan?" />
+                      <Textarea
+                        value={formData.avDescription ?? ""}
+                        onChange={(e) => update("avDescription", e.target.value)}
+                        placeholder="Esim. äänentoisto, videotykki, mikrofonit, striimaus, valaistus..."
+                        rows={3}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
 
-              {/* 11–12. Tapahtuman tyyppi + Kesto ────────────────── */}
+              {/* Tapahtuman tyyppi + Osallistujat ── */}
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                {/* 11. Tapahtuman tyyppi */}
                 <div>
-                  <FieldLabel number={9} label="Tapahtuman tyyppi" required />
-                  <Select
-                    value={formData.eventType}
-                    onValueChange={(v) => update("eventType", v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Valitse tapahtuman tyyppi..." />
-                    </SelectTrigger>
+                  <FieldLabel number={7} label="Tapahtuman tyyppi" required />
+                  <Select value={formData.eventType} onValueChange={(v) => update("eventType", v)}>
+                    <SelectTrigger><SelectValue placeholder="Valitse tapahtuman tyyppi..." /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="corporate">
-                        Yritystilaisuus
-                      </SelectItem>
+                      <SelectItem value="corporate">Yritystilaisuus</SelectItem>
                       <SelectItem value="wedding">Häät</SelectItem>
                       <SelectItem value="birthday">Syntymäpäivä</SelectItem>
                       <SelectItem value="conference">Konferenssi</SelectItem>
@@ -497,61 +542,76 @@ export default function NewLeadPage({ onSubmit, onCancel }: NewLeadPageProps) {
                     </SelectContent>
                   </Select>
                 </div>
-
-                {/* 12. Tapahtuman kesto */}
                 <div>
-                  <FieldLabel number={10} label="Tapahtuman kesto" required />
+                  <FieldLabel number={8} label="Arvioitu osallistujamäärä" required />
+                  <Input
+                    type="number" min={1}
+                    value={formData.participantEstimate}
+                    onChange={(e) => update("participantEstimate", e.target.value)}
+                    placeholder="Esim. 120"
+                  />
+                </div>
+              </div>
+
+              {/* Monipäiväinen + Päivämäärä(t) — yhtenä kokonaisuutena */}
+              <div className="space-y-3">
+                <div>
+                  <FieldLabel number={9} label="Onko tapahtuma monipäiväinen?" required />
                   <ToggleGroup
                     options={DURATION_OPTIONS}
                     value={formData.duration}
                     onChange={(v) => update("duration", v)}
                   />
                 </div>
-              </div>
 
-              {/* Lisäpäivät kun "Useita päiviä" valittu */}
-              {formData.duration === "multi" && (
+                {/* Ensimmäinen päivä */}
                 <div>
-                  <p className="text-sm font-semibold text-gray-800 mb-2">Lisäpäivät</p>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-600">
+                    {formData.duration === "multi" ? "Ensimmäinen päivä" : "Päivämäärä"}
+                  </label>
+                  <div className="relative max-w-xs">
+                    <Input
+                      type="date"
+                      value={formData.date}
+                      onChange={(e) => update("date", e.target.value)}
+                      disabled={formData.dateOpen}
+                      className="pr-9"
+                    />
+                    <Calendar className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <Checkbox id="dateOpen" checked={formData.dateOpen} onCheckedChange={(c) => update("dateOpen", c === true)} />
+                    <label htmlFor="dateOpen" className="text-sm text-gray-600">Ajankohta avoin</label>
+                  </div>
+                </div>
+
+                {/* Lisäpäivät kun "Useita päiviä" valittu */}
+                {formData.duration === "multi" && (
                   <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-600">Muut päivät</label>
                     {formData.extraDates.map((d, i) => (
-                      <div key={i} className="flex items-center gap-2">
+                      <div key={i} className="flex items-center gap-2 max-w-xs">
                         <Input
+                          type="date"
                           value={d}
-                          onChange={(e) => {
-                            const next = [...formData.extraDates]
-                            next[i] = e.target.value
-                            update("extraDates", next)
-                          }}
-                          placeholder="pp.kk.vvvv"
+                          onChange={(e) => { const next = [...formData.extraDates]; next[i] = e.target.value; update("extraDates", next) }}
                           className="flex-1"
                         />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => update("extraDates", formData.extraDates.filter((_, j) => j !== i))}
-                        >
+                        <Button type="button" variant="ghost" size="sm" onClick={() => update("extraDates", formData.extraDates.filter((_, j) => j !== i))}>
                           <X className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                     ))}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="gap-1.5"
-                      onClick={() => update("extraDates", [...formData.extraDates, ""])}
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                      Lisää päivä
+                    <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => update("extraDates", [...formData.extraDates, ""])}>
+                      <Plus className="h-3.5 w-3.5" /> Lisää päivä
                     </Button>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
 
-              {/* Asiakkaan lisäkysymykset — näytetään kaikille */}
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              {/* Asiakkaan lisäkysymykset — vain myyjän versiossa (lomakkeella näytetään aiemmin) */}
+              {!isLomake && (
+              <><div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div>
                   <FieldLabel number={11} label="Erikoisruokavaliot" />
                   <Input
@@ -609,8 +669,11 @@ export default function NewLeadPage({ onSubmit, onCancel }: NewLeadPageProps) {
                   />
                 </div>
               </div>
+              </>
+              )}
 
-              {/* Catering + AV — näytetään kaikille */}
+              {/* Catering + AV — vain myyjän versiossa (lomakkeella ne näkyvät aiemmin) */}
+              {!isLomake && (
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div>
                   <FieldLabel number={15} label="Tarvitaanko catering?" required />
@@ -629,9 +692,10 @@ export default function NewLeadPage({ onSubmit, onCancel }: NewLeadPageProps) {
                   />
                 </div>
               </div>
+              )}
 
               {/* Vastuuhenkilö — vain myyjälle */}
-              {!isClient && (
+              {!isClient && !isLomake && (
                 <div>
                   <FieldLabel number={11} label="Vastuuhenkilö" required />
                   <Select
@@ -655,15 +719,15 @@ export default function NewLeadPage({ onSubmit, onCancel }: NewLeadPageProps) {
           {/* ── Action bar ─────────────────────────────────────── */}
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <Button type="submit" size="lg">
-              <Plus className="h-4 w-4" />
-              {isClient ? "Lähetä pyyntö" : "Luo työmääräin"}
+              {isLomake ? "Lähetä tapahtumapyyntö" : isClient ? "Lähetä pyyntö" : <><Plus className="h-4 w-4" /> Luo työmääräin</>}
             </Button>
-            {!isClient && (
+            {!isClient && !isLomake && (
               <Button type="button" variant="outline" size="lg">
                 <Save className="h-4 w-4" />
                 Tallenna luonnos
               </Button>
             )}
+            {!isLomake && (
             <Button
               type="button"
               variant="ghost"
@@ -673,6 +737,7 @@ export default function NewLeadPage({ onSubmit, onCancel }: NewLeadPageProps) {
               <X className="h-4 w-4" />
               Peruuta
             </Button>
+            )}
           </div>
         </form>
       </main>

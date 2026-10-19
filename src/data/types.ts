@@ -36,7 +36,7 @@ export type ScheduleItemType = 'ajankohta' | 'ohjelma' | 'catering' | 'av' | 'li
 
 export type ScheduleItemStatus = 'luonnos' | 'valmis'
 
-export type EventSource = 'web' | 'sahkoposti' | 'puhelin'
+export type EventSource = 'web' | 'sahkoposti' | 'puhelin' | 'varausjarjestelma'
 
 export type EventNature = 'yritys_sisainen' | 'julkinen' | 'yksityinen' | ''
 export type SeatingStyle = 'teatteri' | 'luokkahuone' | 'u_muoto' | 'banketti' | 'cocktail' | 'muu' | ''
@@ -91,6 +91,7 @@ export interface WorkOrder {
   proposalSections?: ProposalSection[]
   customSections?: CustomSection[]
   avProduction?: AVProduction
+  clientUpdatedAt?: string
 }
 
 export interface ScheduleTemplateItem {

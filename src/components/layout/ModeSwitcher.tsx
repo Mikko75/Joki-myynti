@@ -1,6 +1,6 @@
 import { useMode, SELLER_MODE, CLIENT_MODE } from "@/context/ModeContext"
 import { useTeam } from "@/context/TeamContext"
-import { useNavigate, useLocation } from "react-router-dom"
+import { useNavigate, useLocation, Link } from "react-router-dom"
 import { cn } from "@/lib/utils"
 
 export function ModeSwitcher() {
@@ -11,7 +11,10 @@ export function ModeSwitcher() {
   const id = location.pathname.match(/\/tyomarain\/([^/]+)/)?.[1]
 
   function goToDefault(newMode: string) {
-    if (!id) return
+    if (!id) {
+      navigate("/")
+      return
+    }
     if (newMode === "client") {
       navigate(`/tyomarain/${id}/ehdotus`)
     } else if (newMode === "seller") {
@@ -87,6 +90,25 @@ export function ModeSwitcher() {
         color="#f59e0b"
         label="Asiakas"
       />
+
+      {/* Separator */}
+      <div className="mx-2 h-4 w-px bg-gray-700 shrink-0" />
+
+      {/* Lomake — linkki omalle sivulle */}
+      <Link
+        to="/lomake"
+        className={cn(
+          "flex items-center gap-2 rounded-full px-3 py-1 text-[12px] font-medium transition-all shrink-0",
+          location.pathname === "/lomake"
+            ? "bg-white text-gray-900 shadow-sm"
+            : "text-gray-400 hover:text-white hover:bg-gray-800"
+        )}
+      >
+        <span className="flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold text-white shrink-0 bg-emerald-500">
+          ✎
+        </span>
+        Lomake
+      </Link>
     </div>
   )
 }
