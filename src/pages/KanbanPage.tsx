@@ -92,10 +92,25 @@ export default function KanbanPage() {
     const member = members.find((m) => m.id === mode)
     const isCatering = member?.role === "Catering"
 
-    const myOrders = workOrders
-      .map((wo) => ({ wo, plan: getCateringPlan(wo.id, mode) }))
-      .filter(({ plan }) => plan.status !== "ei_aloitettu")
-      .sort((a, b) => (STATUS_ORDER[a.plan.status] ?? 9) - (STATUS_ORDER[b.plan.status] ?? 9))
+    const AV_STATUS_MAP: Record<string, string> = {
+      kumppanilla: "kumppanilla",
+      vastattu: "vastattu",
+      valmis: "valmis",
+      ei_aloitettu: "ei_aloitettu",
+    }
+
+    const myOrders = isCatering
+      ? workOrders
+          .map((wo) => ({ wo, plan: getCateringPlan(wo.id, mode) }))
+          .filter(({ plan }) => plan.status !== "ei_aloitettu")
+          .sort((a, b) => (STATUS_ORDER[a.plan.status] ?? 9) - (STATUS_ORDER[b.plan.status] ?? 9))
+      : workOrders
+          .filter((wo) => wo.avProduction && wo.avProduction.status !== "ei_aloitettu")
+          .map((wo) => ({
+            wo,
+            plan: { status: AV_STATUS_MAP[wo.avProduction?.status ?? "ei_aloitettu"] ?? "kumppanilla" } as { status: string }
+          }))
+          .sort((a, b) => (STATUS_ORDER[a.plan.status] ?? 9) - (STATUS_ORDER[b.plan.status] ?? 9))
 
     return (
       <div className="p-6 lg:p-8 max-w-3xl">
@@ -112,7 +127,7 @@ export default function KanbanPage() {
         {myOrders.length === 0 ? (
           <div className="rounded-xl border border-dashed border-gray-300 p-12 text-center">
             <p className="text-[14px] font-medium text-gray-500">Ei avoimia toimeksiantoja</p>
-            <p className="text-[12px] text-gray-400 mt-1">Uudet pyynnöt ilmestyvät tähän kun myyjä lähettää catering-briiffin.</p>
+            <p className="text-[12px] text-gray-400 mt-1">{isCatering ? "Uudet pyynnöt ilmestyvät tähän kun myyjä lähettää catering-briiffin." : "Uudet pyynnöt ilmestyvät tähän kun myyjä lähettää AV-suunnittelupyynnön."}</p>
           </div>
         ) : (
           <div className="space-y-3">

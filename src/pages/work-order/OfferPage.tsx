@@ -57,7 +57,9 @@ export default function OfferPage() {
   const spacesTotal = allSpaces.reduce((sum, s) => sum + (s.price ?? 0), 0)
   const cateringMoments = cateringPlan.moments
   const cateringTotal = cateringMoments.reduce((sum, m) => sum + m.price, 0)
-  const avTotal = avPlan.price
+  const avProduction = wo.avProduction
+  const avProductionAreas = avProduction?.productionAreas.filter(a => a.status !== "ei_tarvita") ?? []
+  const avTotal = avProduction?.totalPrice ?? avPlan.price
   const selectedAddOns = wo.selectedAddOns ?? []
   const selectedServices = selectedAddOns
     .map((sel) => {
@@ -223,55 +225,31 @@ export default function OfferPage() {
         onEdit={() => navigate(`${base}/av`)}
         onOpen={() => navigate(`${base}/av`)}
       >
-        {avTotal > 0 || avPlan.microphones || avPlan.audio || avPlan.screens ? (
+        {avProductionAreas.length > 0 ? (
           <>
             <table className="w-full text-[13px]">
               <thead>
                 <tr className="text-[11px] uppercase tracking-wider text-gray-400 border-b border-gray-100">
-                  <th className="text-left py-2 font-medium">Tuote</th>
-                  <th className="text-right py-2 font-medium">Määrä</th>
-                  <th className="text-right py-2 font-medium">A-hinta</th>
+                  <th className="text-left py-2 font-medium">Tuotantoalue</th>
                   <th className="text-right py-2 font-medium">Summa</th>
                 </tr>
               </thead>
               <tbody>
-                {avPlan.microphones && (
-                  <tr className="border-b border-gray-50">
-                    <td className="py-2 text-gray-900">Mikrofonit</td>
-                    <td className="py-2 text-right text-gray-600">–</td>
-                    <td className="py-2 text-right text-gray-600">–</td>
-                    <td className="py-2 text-right font-semibold text-gray-900">–</td>
+                {avProductionAreas.map((area) => (
+                  <tr key={area.key} className="border-b border-gray-50">
+                    <td className="py-2 text-gray-900">{area.label}</td>
+                    <td className="py-2 text-right font-semibold text-gray-900">
+                      {area.price ? `${area.price.toLocaleString("fi-FI")} €` : "–"}
+                    </td>
                   </tr>
-                )}
-                {avPlan.audio && (
-                  <tr className="border-b border-gray-50">
-                    <td className="py-2 text-gray-900">Äänentoisto</td>
-                    <td className="py-2 text-right text-gray-600">–</td>
-                    <td className="py-2 text-right text-gray-600">–</td>
-                    <td className="py-2 text-right font-semibold text-gray-900">–</td>
-                  </tr>
-                )}
-                {avPlan.screens && (
-                  <tr className="border-b border-gray-50">
-                    <td className="py-2 text-gray-900">Esitystekniikka</td>
-                    <td className="py-2 text-right text-gray-600">–</td>
-                    <td className="py-2 text-right text-gray-600">–</td>
-                    <td className="py-2 text-right font-semibold text-gray-900">–</td>
-                  </tr>
-                )}
+                ))}
               </tbody>
             </table>
-            {(avPlan.microphones || avPlan.audio || avPlan.screens || avPlan.streaming || avPlan.recording) && (
+            {avProduction?.notes && (
               <div className="mt-3 rounded-lg bg-blue-50 border border-blue-200 px-4 py-3">
                 <p className="text-[12px] text-blue-800">
-                  <span className="font-semibold">Lisätieto: </span>
-                  {[
-                    avPlan.microphones && `• ${avPlan.microphones}`,
-                    avPlan.audio && `• ${avPlan.audio}`,
-                    avPlan.screens && `• ${avPlan.screens}`,
-                    avPlan.streaming && `• Striimaus: ${avPlan.streaming}`,
-                    avPlan.recording && `• Tallennus: ${avPlan.recording}`,
-                  ].filter(Boolean).join(", ")}
+                  <span className="font-semibold">Tekninen kuvaus: </span>
+                  {avProduction.notes}
                 </p>
               </div>
             )}
@@ -367,7 +345,7 @@ export default function OfferPage() {
 
       {/* CTA */}
       <div className="flex gap-3">
-        <Button variant="outline"><Eye className="h-4 w-4" /> Esikatsele</Button>
+        <Button variant="outline" onClick={() => window.print()}><Eye className="h-4 w-4" /> Esikatsele / Tulosta</Button>
         {isAsiakkaalla || sent ? (
           <Button disabled><Check className="h-4 w-4" /> Tarjous lähetetty</Button>
         ) : (

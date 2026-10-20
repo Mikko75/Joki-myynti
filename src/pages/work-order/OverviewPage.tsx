@@ -215,6 +215,23 @@ export default function OverviewPage() {
               const sec = sections.find((s) => s.key === p.sectionKey)
               return sec?.title ?? p.sectionKey
             }).join(", ")
+            const allApproved = proposals.length > 0 && proposals.every(p => p.status === "approved")
+            if (allApproved) {
+              return (
+                <div className="flex items-center justify-between rounded-xl border border-emerald-300 bg-emerald-50 p-5">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 className="h-6 w-6 text-emerald-500 shrink-0" />
+                    <div>
+                      <p className="text-[15px] font-semibold text-emerald-900">Kaikki osiot hyväksytty!</p>
+                      <p className="text-[13px] text-emerald-700 mt-0.5">Asiakas on hyväksynyt kaiken. Tee nyt lopullinen tarjous.</p>
+                    </div>
+                  </div>
+                  <Link to={`${base}/tarjous`} className="flex items-center gap-2 rounded-lg bg-gray-900 text-white px-5 py-2.5 text-[13px] font-semibold hover:bg-gray-800 transition-colors shrink-0">
+                    Luo lopullinen tarjous →
+                  </Link>
+                </div>
+              )
+            }
             return (
               <div className="flex items-start gap-3 rounded-md border border-emerald-200 bg-emerald-50 p-4">
                 <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-500" />

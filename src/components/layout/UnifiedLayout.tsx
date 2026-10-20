@@ -75,6 +75,7 @@ export function UnifiedLayout() {
   } else if (isClient) {
     navItems = [
       { id: "ehdotus", label: "Tarjous", icon: FileText },
+      { id: "aikataulu", label: "Aikataulu", icon: CalendarDays },
       { id: "oma-pyynto", label: "Oma pyyntöni", icon: Edit3 },
     ]
   } else if (isPartner) {
