@@ -7,7 +7,7 @@ import { useTeam } from "@/context/TeamContext"
 import { InfoBanner } from "@/components/common/InfoBanner"
 import { SectionChat } from "@/components/common/SectionChat"
 import { useState, useRef, useEffect } from "react"
-import { Plus, Info, CheckCircle2, Music, ShieldCheck, Signpost, Armchair, Truck, Users, CarFront, Hotel, FileCheck, Handshake, Star, MoreHorizontal, User, Calendar, Clock, Utensils, Volume2, Link2 } from "lucide-react"
+import { Plus, Info, CheckCircle2, Music, ShieldCheck, Signpost, Armchair, Truck, Users, CarFront, Hotel, FileCheck, Handshake, Star, MoreHorizontal, User, Calendar, Clock, Utensils, Volume2, Link2, RotateCcw } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import type { SectionStatus, ProposalSection, CustomSection } from "@/data/types"
 
@@ -97,6 +97,9 @@ export default function OverviewPage() {
     ...Object.fromEntries(customSections.map((cs) => [`custom-${cs.id}`, cs.description.length > 0])),
   }
 
+  const partnerPlansAll = getAllCateringPlans(workOrderId)
+  const respondedPartners = Object.entries(partnerPlansAll).filter(([pid, p]) => pid !== "_default" && (p.status === "vastattu" || p.status === "valmis"))
+
   function addToProposal(key: string) {
     if (!sectionHasData[key]) {
       setEmptyWarning(key)
@@ -167,6 +170,41 @@ export default function OverviewPage() {
   return (
     <div>
       <WorkOrderHeader workOrder={wo} title="Yleiskuva" />
+
+      {/* Kutsu asiakas portaaliin — ensimmäinen asia */}
+      {(() => {
+        const portalUrl = `${window.location.origin}/tyomarain/${workOrderId}/ehdotus`
+        const customerEmail = wo.customerEmail ?? ""
+        return (
+          <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 space-y-4">
+            <h2 className="text-[15px] font-semibold text-gray-900">Kutsu asiakas portaaliin</h2>
+            <p className="text-[13px] text-gray-500">
+              Jaa portaalilinkki asiakkaalle heti — asiakas pääsee seuraamaan tapahtumansa etenemistä ja päivittämään tietojaan.
+            </p>
+            <div className="flex items-center gap-2">
+              <input type="email" defaultValue={customerEmail} placeholder="asiakkaan@sahkoposti.fi"
+                className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-[13px] text-gray-700 focus:outline-none focus:ring-1 focus:ring-gray-400"
+                id="invite-email-input" />
+              <button id="invite-send-btn"
+                onClick={() => {
+                  const btn = document.getElementById("invite-send-btn")
+                  if (btn) { btn.textContent = "Kutsu lähetetty ✓"; setTimeout(() => { btn.textContent = "Lähetä kutsu" }, 3000) }
+                }}
+                className="flex items-center gap-1.5 rounded-lg bg-gray-900 text-white px-4 py-2 text-[12px] font-medium hover:bg-gray-800 transition-colors shrink-0">
+                Lähetä kutsu
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 font-mono text-[11px] text-gray-400 truncate">{portalUrl}</div>
+              <button id="portal-copy-btn"
+                onClick={() => { navigator.clipboard.writeText(portalUrl).then(() => { const btn = document.getElementById("portal-copy-btn"); if (btn) { btn.textContent = "Kopioitu!"; setTimeout(() => { btn.textContent = "Kopioi linkki" }, 2000) } }) }}
+                className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-[12px] font-medium text-gray-600 hover:border-gray-300 transition-colors shrink-0">
+                <Link2 className="h-3.5 w-3.5" /> Kopioi linkki
+              </button>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Info / status notice */}
       <div className="mb-5">
@@ -241,10 +279,18 @@ export default function OverviewPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {sections.map((s) => {
             const proposal = proposals.find((p) => p.sectionKey === s.key)
-            const proposalMeta = proposal ? PROPOSAL_STATUS_META[proposal.status] : null
+            // Catering "sent" tarkoittaa kumppanilla, ei asiakkaalla
+            const proposalMeta = proposal
+              ? (s.key === "catering" && proposal.status === "sent"
+                  ? { label: "Kumppanilla", badge: "bg-amber-100 text-amber-700" }
+                  : PROPOSAL_STATUS_META[proposal.status])
+              : null
 
             const inProposal = proposalKeys.has(s.key)
             const hasDraft = proposal?.status === "draft"
+
+            // Indikaattori: kumppani vastannut catering-osioon
+            const hasCateringResponse = s.key === "catering" && respondedPartners.filter(([, p]) => p.status === "vastattu").length > 0
 
             return (
               <div key={s.key} className="relative">
@@ -260,7 +306,26 @@ export default function OverviewPage() {
                   description={s.description}
                   members={getMembersForSection(s.key)}
                   dateLabel={eventDate}
+                  note={proposal?.status === "changes_requested" && proposal.clientComment ? `Asiakas: "${proposal.clientComment}"` : undefined}
                 />
+                {hasCateringResponse && (
+                  <span className="absolute top-2 left-2 z-10 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white" title="Kumppani on vastannut" />
+                )}
+
+                {/* Muutospyyntö — selkeä "Lähetä uudelleen" */}
+                {proposal?.status === "changes_requested" && (
+                  <div className="absolute bottom-4 right-4 z-10">
+                    <button
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); addToProposal(s.key) }}
+                      className="flex items-center gap-1.5 rounded-lg bg-gray-900 text-white px-3 py-1.5 text-[11px] font-medium hover:bg-gray-800 transition-colors shadow-sm"
+                      title="Tee muutokset ja lisää uudelleen ehdotukseen"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                      Lähetä uudelleen
+                    </button>
+                  </div>
+                )}
+
                 {!hasDraft && (
                   <div className="absolute top-4 right-4 z-10">
                     {emptyWarning === s.key && (
@@ -366,60 +431,6 @@ export default function OverviewPage() {
         </div>
       </div>
 
-      {/* Kutsu asiakas portaaliin — aina näkyvissä */}
-      {(() => {
-        const portalUrl = `${window.location.origin}/tyomarain/${workOrderId}/ehdotus`
-        const customerEmail = wo.customerEmail ?? ""
-        return (
-          <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6 space-y-4">
-            <h2 className="text-[15px] font-semibold text-gray-900">Kutsu asiakas portaaliin</h2>
-            <p className="text-[13px] text-gray-500">
-              Jaa portaalilinkki asiakkaalle heti — asiakas pääsee seuraamaan tapahtumansa etenemistä ja päivittämään tietojaan.
-            </p>
-
-            {/* Sähköpostikutsu (demo) */}
-            <div className="flex items-center gap-2">
-              <input
-                type="email"
-                defaultValue={customerEmail}
-                placeholder="asiakkaan@sahkoposti.fi"
-                className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-[13px] text-gray-700 focus:outline-none focus:ring-1 focus:ring-gray-400"
-                id="invite-email-input"
-              />
-              <button
-                id="invite-send-btn"
-                onClick={() => {
-                  const btn = document.getElementById("invite-send-btn")
-                  if (btn) { btn.textContent = "Kutsu lähetetty ✓"; setTimeout(() => { btn.textContent = "Lähetä kutsu" }, 3000) }
-                }}
-                className="flex items-center gap-1.5 rounded-lg bg-gray-900 text-white px-4 py-2 text-[12px] font-medium hover:bg-gray-800 transition-colors shrink-0"
-              >
-                Lähetä kutsu
-              </button>
-            </div>
-
-            {/* Tai kopioi linkki */}
-            <div className="flex items-center gap-2">
-              <div className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 font-mono text-[11px] text-gray-400 truncate">
-                {portalUrl}
-              </div>
-              <button
-                id="portal-copy-btn"
-                onClick={() => {
-                  navigator.clipboard.writeText(portalUrl).then(() => {
-                    const btn = document.getElementById("portal-copy-btn")
-                    if (btn) { btn.textContent = "Kopioitu!"; setTimeout(() => { btn.textContent = "Kopioi linkki" }, 2000) }
-                  })
-                }}
-                className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-[12px] font-medium text-gray-600 hover:border-gray-300 transition-colors shrink-0"
-              >
-                <Link2 className="h-3.5 w-3.5" />
-                Kopioi linkki
-              </button>
-            </div>
-          </div>
-        )
-      })()}
 
       <div className="mt-6">
         <h2 className="text-[15px] font-semibold text-gray-900 mb-2">Keskustelu asiakkaan kanssa</h2>

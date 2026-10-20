@@ -313,7 +313,7 @@ export default function PartnerCateringPage() {
         </div>
       )}
 
-      <SectionChat sectionKey="catering" />
+      <SectionChat sectionKey="catering" partnerId={partnerId} />
     </div>
   )
 }

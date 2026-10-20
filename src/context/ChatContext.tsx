@@ -1,8 +1,10 @@
 import { createContext, useContext, useState, useCallback } from "react"
 import type { ReactNode } from "react"
+
 export interface ChatMessage {
   id: string
   sectionKey: string
+  partnerId?: string
   senderName: string
   senderInitials: string
   senderColor: string
@@ -13,14 +15,14 @@ export interface ChatMessage {
 }
 
 interface ChatContextValue {
-  getMessages: (sectionKey: string) => ChatMessage[]
+  getMessages: (sectionKey: string, partnerId?: string) => ChatMessage[]
   sendMessage: (sectionKey: string, content: string, sender: {
     name: string
     initials: string
     color: string
     role: string
     roleLabel: string
-  }) => void
+  }, partnerId?: string) => void
 }
 
 const ChatContext = createContext<ChatContextValue | null>(null)
@@ -29,7 +31,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
 
   const getMessages = useCallback(
-    (sectionKey: string) => messages.filter((m) => m.sectionKey === sectionKey),
+    (sectionKey: string, partnerId?: string) =>
+      messages.filter((m) =>
+        m.sectionKey === sectionKey &&
+        (!partnerId || m.partnerId === partnerId)
+      ),
     [messages]
   )
 
@@ -40,10 +46,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       color: string
       role: string
       roleLabel: string
-    }) => {
+    }, partnerId?: string) => {
       const msg: ChatMessage = {
         id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
         sectionKey,
+        partnerId,
         senderName: sender.name,
         senderInitials: sender.initials,
         senderColor: sender.color,

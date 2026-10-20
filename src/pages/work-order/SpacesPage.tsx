@@ -78,9 +78,26 @@ export default function SpacesPage() {
 
   const hasEventDays = workOrder.eventDays.length > 0
 
+  const tilatProposal = workOrder.proposalSections?.find(p => p.sectionKey === "tilat")
+  const hasChangesRequested = tilatProposal?.status === "changes_requested"
+
   return (
     <div className="space-y-6">
       <WorkOrderHeader workOrder={workOrder} title="Tilat ja optiot" />
+
+      {hasChangesRequested && (
+        <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-red-100 shrink-0">
+            <span className="text-red-600 text-[13px] font-bold">!</span>
+          </div>
+          <div>
+            <p className="text-[14px] font-semibold text-red-900">Asiakas pyytää muutoksia tiloihin</p>
+            {tilatProposal?.clientComment && (
+              <p className="text-[13px] text-red-700 mt-0.5">"{tilatProposal.clientComment}"</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {showBanner && (
         <InfoBanner onDismiss={() => setShowBanner(false)}>

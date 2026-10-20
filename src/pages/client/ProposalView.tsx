@@ -6,6 +6,7 @@ import { Card, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useWorkOrders } from "@/context/WorkOrderContext"
 import { useMenus } from "@/context/MenuContext"
+import { SectionChat } from "@/components/common/SectionChat"
 import { spaces as spaceCatalog } from "@/data/mock"
 import { cn } from "@/lib/utils"
 import type { ProposalSectionStatus } from "@/data/types"
@@ -392,6 +393,12 @@ export default function ProposalView({ workOrderId }: { workOrderId: string }) {
           </Card>
         )
       })}
+
+      {/* Keskustelu myyjän kanssa */}
+      <div className="mt-6">
+        <h2 className="text-[15px] font-semibold text-gray-900 mb-3">Keskustelu myyjän kanssa</h2>
+        <SectionChat sectionKey="asiakas" />
+      </div>
     </div>
   )
 }

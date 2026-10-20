@@ -6,15 +6,16 @@ import { cn } from "@/lib/utils"
 
 interface SectionChatProps {
   sectionKey: string
+  partnerId?: string
 }
 
-export function SectionChat({ sectionKey }: SectionChatProps) {
+export function SectionChat({ sectionKey, partnerId }: SectionChatProps) {
   const { getMessages, sendMessage } = useChat()
   const { modeInfo, mode } = useMode()
   const [input, setInput] = useState("")
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const messages = getMessages(sectionKey)
+  const messages = getMessages(sectionKey, partnerId)
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -29,7 +30,7 @@ export function SectionChat({ sectionKey }: SectionChatProps) {
       color: modeInfo.color,
       role: mode,
       roleLabel: modeInfo.label,
-    })
+    }, partnerId)
     setInput("")
   }
 

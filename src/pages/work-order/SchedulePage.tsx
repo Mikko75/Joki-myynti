@@ -201,9 +201,26 @@ export default function SchedulePage() {
   /*  Render                                                           */
   /* ---------------------------------------------------------------- */
 
+  const aikatauluProposal = workOrder.proposalSections?.find(p => p.sectionKey === "aikataulu")
+  const hasChangesRequested = aikatauluProposal?.status === "changes_requested"
+
   return (
     <div className="space-y-6">
       <WorkOrderHeader workOrder={workOrder} title="Aikataulu" />
+
+      {hasChangesRequested && (
+        <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-red-100 shrink-0">
+            <span className="text-red-600 text-[13px] font-bold">!</span>
+          </div>
+          <div>
+            <p className="text-[14px] font-semibold text-red-900">Asiakas pyytää muutoksia aikatauluun</p>
+            {aikatauluProposal?.clientComment && (
+              <p className="text-[13px] text-red-700 mt-0.5">"{aikatauluProposal.clientComment}"</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {showBanner && (
         <InfoBanner onDismiss={() => setShowBanner(false)}>
@@ -222,7 +239,7 @@ export default function SchedulePage() {
 
       {/* ---- Lahtotiedot ---- */}
       {currentDay && (
-        <div className="relative rounded-lg border bg-white p-6">
+        <div className="relative rounded-xl border border-gray-200 bg-white p-6">
           <h2 className="mb-4 text-lg font-semibold">
             Aikataulun lahtotiedot / Paivamaara {currentDay.date}
           </h2>
@@ -334,7 +351,7 @@ export default function SchedulePage() {
                 <div className="ml-[142px] h-4 w-px bg-gray-200" />
               )}
 
-              <div className="flex items-center gap-3 rounded-lg border bg-white p-4">
+              <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4">
                 {/* Drag handle */}
                 <GripVertical className="h-5 w-5 shrink-0 text-gray-300" />
 
