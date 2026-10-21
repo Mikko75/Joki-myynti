@@ -275,7 +275,7 @@ export default function KanbanPage() {
 
   return (
     <div className="p-6 lg:p-8">
-      <h1 className="text-2xl font-bold text-gray-900">Työmääräimet</h1>
+      <h1 className="text-2xl font-bold text-gray-900">Työpöytä</h1>
 
       {/* Toimintorivi */}
       <div className="mt-5 flex items-center gap-2">

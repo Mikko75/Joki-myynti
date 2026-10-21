@@ -1,3 +1,15 @@
+export type PostItColor = "yellow" | "green" | "blue" | "pink" | "purple"
+export type PostItSection = "yleinen" | "tilat" | "aikataulu" | "catering" | "lisapalvelut"
+
+export interface PostItNote {
+  id: string
+  text: string
+  color: PostItColor
+  sectionKey: PostItSection
+  createdAt: string
+  author?: string
+}
+
 export type ProposalSectionStatus = "draft" | "sent" | "approved" | "changes_requested" | "expired"
 
 export interface ProposalSection {
@@ -84,7 +96,7 @@ export interface WorkOrder {
   decisionDeadline?: string
   isCompetitiveBid?: boolean
   additionalNotes?: string
-  notes?: { id: string; text: string; createdAt: string }[]
+  notes?: PostItNote[]
   sectionNotes?: Record<string, string>
   attachments?: Attachment[]
   selectedAddOns?: { productId: string; quantity?: number }[]

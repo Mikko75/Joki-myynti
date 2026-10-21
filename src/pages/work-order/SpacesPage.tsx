@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { InfoBanner } from "@/components/common/InfoBanner"
 import { DayTabs } from "@/components/common/DayTabs"
-import { SectionNotes } from "@/components/common/SectionNotes"
+import { PostItBoard } from "@/components/common/PostItBoard"
 import { SectionChat } from "@/components/common/SectionChat"
 import { WorkOrderHeader } from "@/components/layout/WorkOrderHeader"
 import { spaces as allSpaces } from "@/data/mock"
@@ -273,7 +273,7 @@ export default function SpacesPage() {
           )}
 
 
-          <SectionNotes sectionKey="tilat" />
+          <PostItBoard sectionKey="tilat" />
           <SectionChat sectionKey="tilat" />
         </>
       )}

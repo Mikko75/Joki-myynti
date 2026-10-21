@@ -6,6 +6,7 @@ import { useWorkOrders } from "@/context/WorkOrderContext"
 import { useTeam } from "@/context/TeamContext"
 import { InfoBanner } from "@/components/common/InfoBanner"
 import { SectionChat } from "@/components/common/SectionChat"
+import { PostItBoard } from "@/components/common/PostItBoard"
 import { useState, useRef, useEffect } from "react"
 import { Plus, Info, CheckCircle2, Music, ShieldCheck, Signpost, Armchair, Truck, Users, CarFront, Hotel, FileCheck, Handshake, Star, MoreHorizontal, User, Calendar, Clock, Utensils, Volume2, Link2, RotateCcw } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
@@ -452,6 +453,10 @@ export default function OverviewPage() {
         </div>
       </div>
 
+
+      <div className="mt-6">
+        <PostItBoard sectionKey="yleinen" showFilter />
+      </div>
 
       <div className="mt-6">
         <h2 className="text-[15px] font-semibold text-gray-900 mb-2">Keskustelu asiakkaan kanssa</h2>

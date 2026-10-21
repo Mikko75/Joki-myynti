@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, useRef } from "react"
 import type { ReactNode } from "react"
-import type { WorkOrder, ScheduleItem, CateringMoment, CateringStatus } from "@/data/types"
+import type { WorkOrder, ScheduleItem, CateringMoment, CateringStatus, PostItNote, PostItColor, PostItSection } from "@/data/types"
 import { workOrders as initialWorkOrders } from "@/data/mock"
 
 export interface CateringPlanState {
@@ -30,6 +30,11 @@ interface WorkOrderContextValue {
   addWorkOrder: (wo: WorkOrder) => void
   getWorkOrder: (id: string) => WorkOrder | undefined
   updateWorkOrder: (id: string, updates: Partial<WorkOrder>) => void
+
+  getNotes: (woId: string, sectionKey?: PostItSection) => PostItNote[]
+  addNote: (woId: string, note: Omit<PostItNote, "id" | "createdAt">) => void
+  updateNote: (woId: string, noteId: string, updates: Partial<PostItNote>) => void
+  removeNote: (woId: string, noteId: string) => void
 
   getScheduleItems: (woId: string, dayId: string) => ScheduleItem[]
   addScheduleItem: (woId: string, dayId: string, item: ScheduleItem) => void
@@ -94,6 +99,29 @@ export function WorkOrderProvider({ children }: { children: ReactNode }) {
     setWorkOrders((prev) =>
       prev.map((wo) => (wo.id === id ? { ...wo, ...updates } : wo))
     )
+  }, [])
+
+  const getNotes = useCallback((woId: string, sectionKey?: PostItSection) => {
+    const wo = workOrders.find(w => w.id === woId)
+    const notes = wo?.notes ?? []
+    return sectionKey ? notes.filter(n => n.sectionKey === sectionKey) : notes
+  }, [workOrders])
+
+  const addNote = useCallback((woId: string, note: Omit<PostItNote, "id" | "createdAt">) => {
+    const newNote: PostItNote = { ...note, id: `note-${Date.now()}`, createdAt: new Date().toISOString() }
+    setWorkOrders(prev => prev.map(wo => wo.id === woId ? { ...wo, notes: [...(wo.notes ?? []), newNote] } : wo))
+  }, [])
+
+  const updateNote = useCallback((woId: string, noteId: string, updates: Partial<PostItNote>) => {
+    setWorkOrders(prev => prev.map(wo => wo.id === woId
+      ? { ...wo, notes: (wo.notes ?? []).map(n => n.id === noteId ? { ...n, ...updates } : n) }
+      : wo))
+  }, [])
+
+  const removeNote = useCallback((woId: string, noteId: string) => {
+    setWorkOrders(prev => prev.map(wo => wo.id === woId
+      ? { ...wo, notes: (wo.notes ?? []).filter(n => n.id !== noteId) }
+      : wo))
   }, [])
 
   const getScheduleItems = useCallback(
@@ -274,6 +302,10 @@ export function WorkOrderProvider({ children }: { children: ReactNode }) {
         addWorkOrder,
         getWorkOrder,
         updateWorkOrder,
+        getNotes,
+        addNote,
+        updateNote,
+        removeNote,
         getScheduleItems,
         addScheduleItem,
         updateScheduleItem,

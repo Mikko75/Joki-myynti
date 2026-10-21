@@ -19,7 +19,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { InfoBanner } from "@/components/common/InfoBanner"
-import { SectionNotes } from "@/components/common/SectionNotes"
+import { PostItBoard } from "@/components/common/PostItBoard"
 import { DayTabs } from "@/components/common/DayTabs"
 import { WorkOrderHeader } from "@/components/layout/WorkOrderHeader"
 import { useCurrentWorkOrder } from "@/hooks/useCurrentWorkOrder"
@@ -665,7 +665,7 @@ export default function SchedulePage() {
         </DialogContent>
       </Dialog>
 
-      <SectionNotes sectionKey="aikataulu" />
+      <PostItBoard sectionKey="aikataulu" />
     </div>
   )
 }

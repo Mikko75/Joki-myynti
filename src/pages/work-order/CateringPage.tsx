@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Plus, Sparkles, UtensilsCrossed } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { SectionNotes } from "@/components/common/SectionNotes"
+import { PostItBoard } from "@/components/common/PostItBoard"
 import { SectionChat } from "@/components/common/SectionChat"
 import { WorkOrderHeader } from "@/components/layout/WorkOrderHeader"
 import { WorkOrderSectionCard } from "@/components/common/WorkOrderSectionCard"
@@ -331,7 +331,7 @@ export default function CateringPage() {
         </div>
       )}
 
-      <SectionNotes sectionKey="catering" />
+      <PostItBoard sectionKey="catering" />
       <SectionChat sectionKey="catering" />
       </>
       )}

@@ -3,7 +3,7 @@ import { LayoutGrid, Users, CalendarDays, Settings, FileEdit } from "lucide-reac
 import { cn } from "@/lib/utils"
 
 const navItems = [
-  { id: "tyomaarain", label: "Työmääräin", icon: LayoutGrid, to: "/" },
+  { id: "tyomaarain", label: "Työpöytä", icon: LayoutGrid, to: "/" },
   { id: "asiakkaat", label: "Asiakkaat", icon: Users, to: "/asiakkaat" },
   { id: "kalenteri", label: "Kalenteri", icon: CalendarDays, to: "/kalenteri" },
   { id: "lomake", label: "Tarjouspyyntölomake", icon: FileEdit, to: "/lomake" },

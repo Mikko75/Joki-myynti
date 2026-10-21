@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus, ChevronRight } from "lucide-react"
 import { Link } from "react-router-dom"
 import { WorkOrderHeader } from "@/components/layout/WorkOrderHeader"
-import { SectionNotes } from "@/components/common/SectionNotes"
+import { PostItBoard } from "@/components/common/PostItBoard"
 import { SectionChat } from "@/components/common/SectionChat"
 import { useCurrentWorkOrder } from "@/hooks/useCurrentWorkOrder"
 import { useWorkOrders } from "@/context/WorkOrderContext"
@@ -86,7 +86,7 @@ export default function ServicesPage() {
         </div>
       </Card>
 
-      <SectionNotes sectionKey="lisapalvelut" />
+      <PostItBoard sectionKey="lisapalvelut" />
       <SectionChat sectionKey="av" />
     </div>
   )
