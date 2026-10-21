@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Outlet, useParams, useLocation, Link } from "react-router-dom"
 import {
   LayoutDashboard, DoorOpen, CalendarDays, UtensilsCrossed, PlusCircle,
-  Video, MessageSquare, FileText, ChevronsLeft, ChevronsRight, Edit3,
+  Video, MessageSquare, FileText, FileCheck, ChevronsLeft, ChevronsRight, Edit3,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { TopBar } from "./TopBar"
@@ -74,9 +74,9 @@ export function UnifiedLayout() {
     navItems = sellerNav
   } else if (isClient) {
     navItems = [
-      { id: "ehdotus", label: "Tarjous", icon: FileText },
-      { id: "aikataulu", label: "Aikataulu", icon: CalendarDays },
       { id: "oma-pyynto", label: "Oma pyyntöni", icon: Edit3 },
+      { id: "ehdotus", label: "Ehdotukset", icon: FileText },
+      { id: "lopullinen-tarjous", label: "Lopullinen tarjous", icon: FileCheck },
     ]
   } else if (isPartner) {
     const member = members.find((m) => m.id === mode)

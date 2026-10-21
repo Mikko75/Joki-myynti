@@ -91,8 +91,21 @@ export default function ProposalView({ workOrderId }: { workOrderId: string }) {
           </div>
         )}
         {p.status === "approved" && (
-          <div className="flex items-center gap-2 text-[13px] text-emerald-600">
-            <CheckCircle2 className="h-4 w-4" /> Hyväksytty
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 text-[13px] text-emerald-600">
+              <CheckCircle2 className="h-4 w-4" /> Hyväksytty
+            </div>
+            <button
+              onClick={() => {
+                const updated = (wo.proposalSections ?? []).map((s) =>
+                  s.sectionKey === sectionKey ? { ...s, status: "sent" as const } : s
+                )
+                updateWorkOrder(workOrderId, { proposalSections: updated })
+              }}
+              className="text-[12px] text-gray-400 hover:text-gray-600 underline"
+            >
+              Peru
+            </button>
           </div>
         )}
         {p.status === "changes_requested" && (

@@ -653,8 +653,8 @@ export interface CateringProvider {
 }
 
 export const cateringProviders: CateringProvider[] = [
-  { id: "partner-1", name: "Mauno Catering", initials: "MC", color: "#22c55e" },
-  { id: "partner-2", name: "Unica Catering", initials: "UC", color: "#3b82f6" },
+  { id: "partner-catering", name: "Mauno Catering", initials: "MC", color: "#22c55e" },
+  { id: "partner-unica", name: "Unica Catering", initials: "UC", color: "#7c3aed" },
 ]
 
 export const unicaMenus: Menu[] = [

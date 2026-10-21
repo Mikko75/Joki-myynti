@@ -85,7 +85,7 @@ export function RightPanel() {
     : isCateringPartner
     ? allProposals.filter((p) => p.sectionKey.startsWith("catering-") && (!p.partnerId || p.partnerId === mode))
     : isAV
-    ? allProposals.filter((p) => p.sectionKey === "av" || p.sectionKey.startsWith("av-"))
+    ? allProposals.filter((p) => (p.sectionKey === "av" || p.sectionKey.startsWith("av-")) && (!p.partnerId || p.partnerId === mode))
     : allProposals.filter((p) => p.sectionKey !== "av" && !p.sectionKey.startsWith("av-") && !p.sectionKey.startsWith("catering-"))
   const hasDrafts = proposals.some((p) => p.status === "draft")
 

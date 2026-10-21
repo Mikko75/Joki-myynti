@@ -112,47 +112,73 @@ export default function KanbanPage() {
           }))
           .sort((a, b) => (STATUS_ORDER[a.plan.status] ?? 9) - (STATUS_ORDER[b.plan.status] ?? 9))
 
+    const route = isCatering ? "catering" : "av"
+
+    const COLUMNS = [
+      { key: "kumppanilla", label: "Saapunut",            accent: "border-t-amber-400",   dot: "bg-amber-400" },
+      { key: "luonnos",     label: "Työn alla",           accent: "border-t-blue-400",    dot: "bg-blue-400" },
+      { key: "vastattu",    label: "Lähetetty myyjälle",  accent: "border-t-purple-400",  dot: "bg-purple-400" },
+      { key: "valmis",      label: "Vahvistettu",         accent: "border-t-emerald-400", dot: "bg-emerald-500" },
+    ]
+
     return (
-      <div className="p-6 lg:p-8 max-w-3xl">
+      <div className="p-6 lg:p-8">
         <div className="flex items-center gap-3 mb-6">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100">
             <UtensilsCrossed className="h-5 w-5 text-emerald-600" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-gray-900">{member?.name ?? mode}</h1>
-            <p className="text-[13px] text-gray-500">Omat toimeksiannot</p>
+            <p className="text-[13px] text-gray-500">Toimeksiannot</p>
           </div>
         </div>
 
         {myOrders.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-gray-300 p-12 text-center">
+          <div className="rounded-xl border border-dashed border-gray-300 p-12 text-center max-w-md">
             <p className="text-[14px] font-medium text-gray-500">Ei avoimia toimeksiantoja</p>
-            <p className="text-[12px] text-gray-400 mt-1">{isCatering ? "Uudet pyynnöt ilmestyvät tähän kun myyjä lähettää catering-briiffin." : "Uudet pyynnöt ilmestyvät tähän kun myyjä lähettää AV-suunnittelupyynnön."}</p>
+            <p className="text-[12px] text-gray-400 mt-1">{isCatering ? "Uudet pyynnöt ilmestyvät kun myyjä lähettää catering-briiffin." : "Uudet pyynnöt ilmestyvät kun myyjä lähettää AV-pyynnön."}</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {myOrders.map(({ wo, plan }) => {
-              const meta = CATERING_STATUS_META[plan.status] ?? CATERING_STATUS_META.luonnos
-              const eventDate = wo.eventDays[0]?.date ?? "–"
-              const route = isCatering ? "catering" : "av"
+          <div className="flex gap-4 overflow-x-auto pb-4">
+            {COLUMNS.map((col) => {
+              const colOrders = myOrders.filter(({ plan }) => plan.status === col.key)
               return (
-                <div
-                  key={wo.id}
-                  className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-5 hover:border-gray-300 transition-colors cursor-pointer"
-                  onClick={() => navigate(`/tyomarain/${wo.id}/${route}`)}
-                >
-                  <div className="flex items-start gap-3">
-                    <span className={`mt-1.5 h-2.5 w-2.5 rounded-full shrink-0 ${meta.dot}`} />
-                    <div>
-                      <p className="text-[15px] font-semibold text-gray-900">{wo.eventName ?? wo.eventType}</p>
-                      <p className="text-[12px] text-gray-500 mt-0.5">
-                        {wo.customerCompany} · {eventDate} · {wo.participantEstimate} hlö
-                      </p>
-                    </div>
+                <div key={col.key} className="w-64 shrink-0">
+                  {/* Sarakkeen otsikko */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className={`h-2.5 w-2.5 rounded-full ${col.dot}`} />
+                    <span className="text-[13px] font-semibold text-gray-700">{col.label}</span>
+                    <span className="text-[12px] text-gray-400 ml-auto">{colOrders.length}</span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Badge className={`text-[11px] ${meta.badge}`}>{meta.label}</Badge>
-                    <ArrowRight className="h-4 w-4 text-gray-400" />
+                  {/* Kortit */}
+                  <div className="space-y-2">
+                    {colOrders.map(({ wo, plan }) => {
+                      const eventDate = wo.eventDays[0]?.date ?? "–"
+                      const plan2 = isCatering ? getCateringPlan(wo.id, mode) : null
+                      const momentCount = plan2?.moments.length ?? 0
+                      return (
+                        <div
+                          key={wo.id}
+                          onClick={() => navigate(`/tyomarain/${wo.id}/${route}`)}
+                          className={`bg-white rounded-xl border border-gray-200 border-t-4 ${col.accent} p-4 cursor-pointer hover:shadow-md hover:border-gray-300 transition-all`}
+                        >
+                          <p className="text-[14px] font-semibold text-gray-900 leading-tight">{wo.eventName ?? wo.eventType}</p>
+                          <p className="text-[12px] text-gray-500 mt-1">{wo.customerCompany}</p>
+                          <div className="mt-3 flex items-center justify-between text-[11px] text-gray-400">
+                            <span>{eventDate}</span>
+                            <span>{wo.participantEstimate} hlö</span>
+                          </div>
+                          {isCatering && momentCount > 0 && (
+                            <div className="mt-2 text-[11px] text-gray-500">{momentCount} tarjoiluhetkeä</div>
+                          )}
+                        </div>
+                      )
+                    })}
+                    {colOrders.length === 0 && (
+                      <div className="rounded-xl border border-dashed border-gray-200 p-4 text-center text-[12px] text-gray-300">
+                        Ei tilauksia
+                      </div>
+                    )}
                   </div>
                 </div>
               )

@@ -215,7 +215,11 @@ export default function OverviewPage() {
               const sec = sections.find((s) => s.key === p.sectionKey)
               return sec?.title ?? p.sectionKey
             }).join(", ")
-            const allApproved = proposals.length > 0 && proposals.every(p => p.status === "approved")
+            // Kaikki hyväksytty vain kun KAIKKI pääosiot on lähetetty JA hyväksytty
+            const mainSectionKeys = ["tilat", "aikataulu", "catering", "lisapalvelut"]
+            const allApproved = mainSectionKeys.every(key =>
+              proposals.find(p => p.sectionKey === key)?.status === "approved"
+            )
             if (allApproved) {
               return (
                 <div className="flex items-center justify-between rounded-xl border border-emerald-300 bg-emerald-50 p-5">

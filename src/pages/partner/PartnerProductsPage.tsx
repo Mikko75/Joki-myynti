@@ -43,8 +43,10 @@ export default function PartnerProductsPage() {
   const { menus, getMenusByPartner, getAllProducts, addMenu, updateMenu, removeMenu, addProduct, updateProduct, removeProduct } = useMenus()
   const { mode } = useMode()
 
-  const [selectedProviderId, setSelectedProviderId] = useState(cateringProviders[0].id)
   const isSeller = mode === "seller"
+  const [selectedProviderId, setSelectedProviderId] = useState(
+    isSeller ? cateringProviders[0].id : mode
+  )
 
   const filteredMenus = getMenusByPartner(selectedProviderId)
 

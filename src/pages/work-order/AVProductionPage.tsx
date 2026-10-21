@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils"
 
 const STATUS_META: Record<string, { label: string; badge: string }> = {
   ei_aloitettu: { label: "Ei aloitettu", badge: "bg-gray-100 text-gray-600" },
-  tarve_kuvattu: { label: "Tarve kuvattu", badge: "bg-blue-100 text-blue-700" },
+  kumppanilla: { label: "Kumppanilla", badge: "bg-amber-100 text-amber-700" },
   kumppanilla: { label: "Kumppanilla", badge: "bg-amber-100 text-amber-700" },
   vastattu: { label: "Kumppani vastannut", badge: "bg-emerald-100 text-emerald-700" },
   valmis: { label: "Hyväksytty", badge: "bg-emerald-100 text-emerald-700" },
@@ -174,7 +174,7 @@ export default function AVProductionPage() {
               <Textarea
                 placeholder="Kerro vapaasti tapahtuman AV-tarpeista..."
                 value={av.notes}
-                onChange={(e) => updateAV({ notes: e.target.value, status: av.status === "ei_aloitettu" ? "tarve_kuvattu" : av.status })}
+                onChange={(e) => updateAV({ notes: e.target.value })}
                 rows={4}
               />
             </div>

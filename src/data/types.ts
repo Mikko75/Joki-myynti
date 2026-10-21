@@ -283,7 +283,6 @@ export interface AVPlan {
 
 export type AVProductionStatus =
   | "ei_aloitettu"
-  | "tarve_kuvattu"
   | "kumppanilla"
   | "vastattu"
   | "valmis"

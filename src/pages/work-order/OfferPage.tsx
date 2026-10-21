@@ -346,10 +346,13 @@ export default function OfferPage() {
       {/* CTA */}
       <div className="flex gap-3">
         <Button variant="outline" onClick={() => window.print()}><Eye className="h-4 w-4" /> Esikatsele / Tulosta</Button>
-        {isAsiakkaalla || sent ? (
+        {sent ? (
           <Button disabled><Check className="h-4 w-4" /> Tarjous lähetetty</Button>
         ) : (
-          <Button onClick={handleSend}><Send className="h-4 w-4" /> Lähetä asiakkaalle</Button>
+          <Button onClick={handleSend}>
+            <Send className="h-4 w-4" />
+            {isAsiakkaalla ? "Lähetä päivitetty tarjous" : "Lähetä asiakkaalle"}
+          </Button>
         )}
       </div>
     </div>

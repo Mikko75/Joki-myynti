@@ -20,6 +20,7 @@ import InvitePage from "@/pages/work-order/InvitePage"
 import PerustiedotPage from "@/pages/work-order/PerustiedotPage"
 import ProposalView from "@/pages/client/ProposalView"
 import CustomerRequestPage from "@/pages/client/CustomerRequestPage"
+import LopullinenTarjousPage from "@/pages/client/LopullinenTarjousPage"
 import CustomSectionPage from "@/pages/work-order/CustomSectionPage"
 
 function ClientPortalPage() {
@@ -34,7 +35,7 @@ function ProposalViewPage() {
 
 function ModeRedirect() {
   const { mode } = useMode()
-  if (mode === "client") return <Navigate to="ehdotus" replace />
+  if (mode === "client") return <Navigate to="oma-pyynto" replace />
   return <Navigate to="yleiskuva" replace />
 }
 
@@ -68,6 +69,7 @@ export function ModeRouter() {
         <Route path="kutsu" element={<InvitePage />} />
         <Route path="asiakas" element={<ClientPortalPage />} />
         <Route path="ehdotus" element={<ProposalViewPage />} />
+        <Route path="lopullinen-tarjous" element={<LopullinenTarjousPage />} />
         <Route path="oma-pyynto" element={<CustomerRequestPage />} />
         <Route path="tilat" element={<SpacesPage />} />
         <Route path="aikataulu" element={<ScheduleRouter />} />

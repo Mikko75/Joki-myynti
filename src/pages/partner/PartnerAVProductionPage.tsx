@@ -8,6 +8,7 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { SectionChat } from "@/components/common/SectionChat"
 import { useParams } from "react-router-dom"
 import { useWorkOrders } from "@/context/WorkOrderContext"
+import { useMode } from "@/context/ModeContext"
 import { WorkOrderSectionCard } from "@/components/common/WorkOrderSectionCard"
 import type { AVProduction, AVProductionArea, AVScheduleItem, ProposalSection } from "@/data/types"
 import { cn } from "@/lib/utils"
@@ -32,6 +33,8 @@ export default function PartnerAVProductionPage() {
   const { id } = useParams<{ id: string }>()
   const woId = id ?? ""
   const { getWorkOrder, updateWorkOrder } = useWorkOrders()
+  const { mode } = useMode()
+  const partnerId = mode
   const workOrder = getWorkOrder(woId)
   const [newRunItem, setNewRunItem] = useState({ time: "", title: "" })
   const [expandedAreaKey, setExpandedAreaKey] = useState<string | null>(null)
@@ -44,7 +47,7 @@ export default function PartnerAVProductionPage() {
   function addAreaToProposal(areaKey: string) {
     const key = `av-${areaKey}`
     if (proposalKeys.has(key)) return
-    const entry: ProposalSection = { sectionKey: key, sentAt: null, status: "draft" }
+    const entry: ProposalSection = { sectionKey: key, sentAt: null, status: "draft", partnerId }
     updateWorkOrder(woId, { proposalSections: [...proposals, entry] })
   }
 
@@ -99,7 +102,7 @@ export default function PartnerAVProductionPage() {
   const allSpaces = wo.eventDays.flatMap((d) => d.spaces)
   const scheduleItems = wo.eventDays.flatMap((d) => d.scheduleItems)
 
-  if (av.status === "ei_aloitettu" || av.status === "tarve_kuvattu") {
+  if (av.status === "ei_aloitettu") {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">AV-tuotanto</h1>

@@ -360,12 +360,12 @@ export default function SchedulePage() {
                   {item.startTime}
                 </div>
 
-                <span className="text-gray-400">&ndash;</span>
-
-                {/* End time */}
-                <div className="rounded border border-gray-300 px-3 py-1 font-mono text-sm font-medium">
-                  {item.endTime || "--:--"}
-                </div>
+                {item.endTime && item.endTime !== item.startTime && (<>
+                  <span className="text-gray-400">&ndash;</span>
+                  <div className="rounded border border-gray-300 px-3 py-1 font-mono text-sm font-medium">
+                    {item.endTime}
+                  </div>
+                </>)}
 
                 {/* Timeline dot */}
                 <div className="h-3 w-3 shrink-0 rounded-full border-2 border-gray-300 bg-white" />
@@ -454,7 +454,7 @@ export default function SchedulePage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Paattyy</label>
+                <label className="text-sm font-medium text-gray-500">Päättyy <span className="font-normal">(valinnainen)</span></label>
                 <Input
                   type="time"
                   value={ohjelmaForm.endTime}
@@ -620,7 +620,7 @@ export default function SchedulePage() {
               </div>
               {editItem?.type !== "ajankohta" && (
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Paattyy</label>
+                  <label className="text-sm font-medium text-gray-500">Päättyy <span className="font-normal">(valinnainen)</span></label>
                   <Input
                     type="time"
                     value={editForm.endTime}
