@@ -84,6 +84,23 @@ export default function PartnerCateringPage() {
             <span className="font-medium text-gray-900">{plan.participantCount || workOrder.participantEstimate} hlö</span>
           </div>
         </div>
+        {/* Tilat */}
+        {(() => {
+          const allSpaces = workOrder.eventDays.flatMap(d => d.spaces)
+          if (allSpaces.length === 0) return null
+          return (
+            <div className="border-t border-gray-100 pt-4">
+              <p className="text-[12px] font-medium text-gray-500 mb-2">Tapahtumatilat</p>
+              <div className="flex flex-wrap gap-2">
+                {allSpaces.map((s, i) => (
+                  <span key={i} className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-[12px] font-medium text-gray-700">
+                    📍 {s.spaceName}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )
+        })()}
       </div>
 
       {/* Tapahtuman aikataulu — read-only, sama teksti kuin myyjällä */}
