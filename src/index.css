@@ -1,27 +1,79 @@
 @import "tailwindcss";
 
 @theme {
+  /* ── Navigaatio / Layout ──────────────────────────────── */
+  --color-sidebar-main:        #000000;   /* vasen musta ikonipalkki */
+  --color-sidebar-workorder:   #111827;   /* työmääräin-navigaatio (gray-900) */
+  --color-sidebar-nav-text:    #d1d5db;   /* nav-linkit lepotilassa */
+  --color-sidebar-nav-hover:   #1f2937;   /* nav-linkki hover (gray-800) */
+  --color-sidebar-nav-active:  #1f2937;   /* aktiivinen nav-linkki */
+  --color-sidebar-border:      #374151;   /* erottimet tummalla taustalla */
+
+  /* ── Pinnat / Taustat ────────────────────────────────── */
+  --color-surface-page:        #f4f0f0;   /* sivun tausta */
+  --color-surface-card:        #ffffff;   /* kortit */
+  --color-surface-subtle:      #f8f9fb;   /* sisältöalueen tausta */
+
+  /* ── Teksti ──────────────────────────────────────────── */
+  --color-text-primary:        #1f2937;   /* pääotsikot */
+  --color-text-secondary:      #6b7280;   /* toissijainen teksti */
+  --color-text-muted:          #9ca3af;   /* placeholder, meta */
+  --color-text-on-dark:        #d1d5db;   /* teksti tummalla taustalla */
+
+  /* ── Reunat ──────────────────────────────────────────── */
+  --color-border:              #e5e7eb;   /* oletusreuna */
+  --color-border-strong:       #d1d5db;   /* vahvempi reuna */
+
+  /* ── Primary ─────────────────────────────────────────── */
+  --color-primary-50:  #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+
+  /* ── Navy (varausjärjestelmä-teemat) ─────────────────── */
   --color-navy-950: #0f1629;
   --color-navy-900: #1a2342;
   --color-navy-800: #1e2a4a;
   --color-navy-700: #2a3a5c;
   --color-navy-600: #3a4d73;
 
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-500: #3b82f6;
-  --color-primary-600: #2563eb;
-  --color-primary-700: #1d4ed8;
+  /* ── Työmääräimen status ─────────────────────────────── */
+  --color-status-uusi:        #3b82f6;   /* sininen  */
+  --color-status-tyonalla:    #f59e0b;   /* amber    */
+  --color-status-asiakkaalla: #8b5cf6;   /* violetti */
+  --color-status-vahvistettu: #22c55e;   /* vihreä   */
+  --color-status-ei-toteudu:  #9ca3af;   /* harmaa   */
 
-  --color-status-green: #22c55e;
+  /* ── Proposalin status ───────────────────────────────── */
+  --color-proposal-draft:     #6b7280;
+  --color-proposal-sent:      #d97706;
+  --color-proposal-approved:  #16a34a;
+  --color-proposal-changes:   #dc2626;
+
+  /* ── Brändi ──────────────────────────────────────────── */
+  --color-brand-green: #39E600;   /* JOKI-logon vihreä piste */
+
+  /* ── Yleinen status ──────────────────────────────────── */
+  --color-status-green:  #22c55e;
   --color-status-orange: #f97316;
-  --color-status-grey: #d1d5db;
+  --color-status-grey:   #d1d5db;
 
+  /* ── Typografia ──────────────────────────────────────── */
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
 
-  --radius-card: 0.75rem;
+  /* ── Spacing / Välit ─────────────────────────────────── */
+  --spacing-card:        1.25rem;   /* kortin sisäinen padding (p-5 = 20px) */
+  --spacing-content:     1.5rem;    /* sisältöalueen padding (p-6 = 24px)   */
+  --spacing-content-lg:  2rem;      /* laajalla näytöllä (p-8 = 32px)       */
+  --spacing-section-gap: 1.25rem;   /* osioiden välinen rako (space-y-5)    */
+  --spacing-grid-gap:    1rem;      /* korttiruudukon väli (gap-4 = 16px)   */
+  --spacing-item-gap:    0.75rem;   /* kortin sisäinen listaus (gap-3)      */
+
+  /* ── Muoto / Varjo ───────────────────────────────────── */
+  --radius-card:    0.75rem;
   --radius-control: 0.5rem;
-  --shadow-card: 0 1px 2px 0 rgba(16, 24, 40, 0.04);
+  --shadow-card:    0 1px 2px 0 rgba(16, 24, 40, 0.04);
   --shadow-sidebar: 1px 0px 8px 0px rgba(0, 0, 0, 0.06);
 }
 
@@ -36,8 +88,8 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-color: #f8f9fb;
-    color: #1f2937;
+    background-color: var(--color-surface-page);
+    color: var(--color-text-primary);
     font-size: 14px;
     line-height: 1.5;
   }
@@ -63,4 +115,32 @@
   ::-webkit-scrollbar-thumb:hover {
     background: #9ca3af;
   }
+}
+
+/* Global: border-radius 0 — ylikirjoittaa Tailwindin radius-arvot */
+@layer base {
+  :root {
+    --tw-rounded-sm: 0px;
+    --tw-rounded: 0px;
+    --tw-rounded-md: 0px;
+    --tw-rounded-lg: 0px;
+    --tw-rounded-xl: 0px;
+    --tw-rounded-2xl: 0px;
+    --tw-rounded-3xl: 0px;
+  }
+}
+
+.rounded-sm, .rounded, .rounded-md, .rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl,
+[class*="rounded-t-"], [class*="rounded-b-"], [class*="rounded-l-"], [class*="rounded-r-"],
+[class*="rounded-tl-"], [class*="rounded-tr-"], [class*="rounded-bl-"], [class*="rounded-br-"] {
+  border-radius: 0 !important;
+}
+
+/* Global: border pois kaikista korteista */
+.border, .border-2, .border-4,
+[class*="border-gray-"], [class*="border-emerald-"], [class*="border-amber-"],
+[class*="border-red-"], [class*="border-blue-"], [class*="border-purple-"],
+[class*="border-green-"], [class*="border-pink-"] {
+  border-color: transparent !important;
+  border-width: 0 !important;
 }

@@ -2,6 +2,7 @@ import { Calendar, MoreHorizontal, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useNavigate } from 'react-router-dom'
 import type { WorkOrder, WorkOrderStatus, EventSource, SectionStatus } from '@/data/types'
+import { spaces as spaceCatalog } from '@/data/mock'
 
 interface KanbanCardProps {
   workOrder: WorkOrder
@@ -50,14 +51,42 @@ export function KanbanCard({ workOrder, onClick }: KanbanCardProps) {
   const navigate = useNavigate()
   const firstDate = workOrder.eventDays[0]?.date ?? '—'
 
-  // Progress: count valmis sections out of 3
-  const sections: SectionStatus[] = [
-    workOrder.sectionStatuses.tila,
-    workOrder.sectionStatuses.catering,
-    workOrder.sectionStatuses.av,
-  ]
-  const valmisCount = sections.filter((s) => s === 'valmis').length
-  const progressPct = Math.round((valmisCount / 3) * 100)
+  // Ensimmäisen valitun tilan kuva
+  const firstSpace = workOrder.eventDays.flatMap(d => d.spaces)[0]
+  const spaceImage = firstSpace ? spaceCatalog.find(s => s.id === firstSpace.spaceId)?.image : null
+
+  // Progress: pipeline-pohjainen — seuraa workOrderin statusta
+  const proposalProgress = (status: string): number => {
+    switch (status) {
+      case 'uusi':        return 5
+      case 'tyonalla':    return 30
+      case 'asiakkaalla': return 65
+      case 'vahvistettu': return 100
+      default:            return 0
+    }
+  }
+
+  // Tarkennetaan proposalSections-datan perusteella työnalla-vaiheessa
+  const proposals = workOrder.proposalSections ?? []
+  const approvedCount = proposals.filter(p => p.status === 'approved').length
+  const sentCount = proposals.filter(p => p.status === 'sent' || p.status === 'approved').length
+
+  let progressPct = proposalProgress(workOrder.status)
+  if (workOrder.status === 'tyonalla') {
+    progressPct = Math.max(15, Math.min(55, 15 + sentCount * 10))
+  } else if (workOrder.status === 'asiakkaalla') {
+    progressPct = Math.max(60, Math.min(90, 60 + approvedCount * 8))
+  }
+
+  // Progress väri seuraa status-badgen väriä
+  const progressColors: Record<string, string> = {
+    uusi:        '#3b82f6',  // blue
+    tyonalla:    '#f59e0b',  // amber
+    asiakkaalla: '#8b5cf6',  // purple
+    vahvistettu: '#22c55e',  // green
+    ei_toteudu:  '#9ca3af',  // gray
+  }
+  const progressColor = progressColors[workOrder.status] ?? '#6b7280'
 
   // Participants for avatar row (first 3)
   const participants = workOrder.participants?.slice(0, 3) ?? []
@@ -65,8 +94,9 @@ export function KanbanCard({ workOrder, onClick }: KanbanCardProps) {
   return (
     <div
       onClick={onClick}
-      className="bg-white border border-[#f3f4f6] rounded-[12px] shadow-[0px_2px_12px_rgba(0,0,0,0.08)] p-4 flex flex-col gap-4 cursor-pointer hover:shadow-[0px_4px_16px_rgba(0,0,0,0.12)] hover:border-gray-200 transition-all duration-150"
+      className="bg-white border border-[#f3f4f6] shadow-[0px_2px_12px_rgba(0,0,0,0.08)] overflow-hidden flex flex-col cursor-pointer hover:shadow-[0px_4px_16px_rgba(0,0,0,0.12)] hover:border-gray-200 transition-all duration-150"
     >
+      <div className="p-4 flex flex-col gap-4">
       {/* Header: status badge + menu */}
       <div className="flex items-center justify-between">
         <span className={cn('text-[12px] font-semibold leading-4 px-3 py-1 rounded-full', statusBadgeColors[workOrder.status])}>
@@ -94,8 +124,8 @@ export function KanbanCard({ workOrder, onClick }: KanbanCardProps) {
         </div>
         <div className="h-2 bg-[#e2e8f0] rounded-full w-full overflow-hidden">
           <div
-            className="h-full bg-[#4f46e5] rounded-full transition-all"
-            style={{ width: `${progressPct}%` }}
+            className="h-full rounded-full transition-all"
+            style={{ width: `${progressPct}%`, backgroundColor: progressColor }}
           />
         </div>
       </div>
@@ -163,7 +193,7 @@ export function KanbanCard({ workOrder, onClick }: KanbanCardProps) {
         </div>
       )}
 
-      {/* Footer: avatars + date + calendar link */}
+      {/* Footer: avatars + date + calendar link + tilathumbnail */}
       <div className="flex items-center gap-2">
         {/* Participant avatars */}
         <div className="flex items-center">
@@ -197,6 +227,7 @@ export function KanbanCard({ workOrder, onClick }: KanbanCardProps) {
             </button>
           )}
         </div>
+      </div>
       </div>
     </div>
   )

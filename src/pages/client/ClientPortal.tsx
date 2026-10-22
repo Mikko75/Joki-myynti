@@ -483,7 +483,7 @@ export default function ClientPortal({ workOrderId }: { workOrderId: string }) {
                     proposalSections: updatedProposals,
                     eventDays: workOrder.eventDays.map((d) => ({
                       ...d,
-                      spaces: d.spaces.map((s) => ({ ...s, optionStatus: "vahvistettu" })),
+                      spaces: d.spaces.map((s) => ({ ...s, status: "vahvistettu" as const })),
                     })),
                   })
                 }}

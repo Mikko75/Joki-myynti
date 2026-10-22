@@ -16,7 +16,7 @@ export function MainSidebar() {
   const activeItem = match ? match.id : "tyomaarain"
 
   return (
-    <aside className="hidden md:flex flex-col items-center bg-gray-900 shrink-0 overflow-hidden py-4 w-16">
+    <aside className="hidden md:flex flex-col items-center shrink-0 overflow-hidden py-4 w-16" style={{ backgroundColor: "var(--color-sidebar-main)" }}>
       {/* Logo */}
       <Link to="/" className="mb-6 flex items-center justify-center">
         <img src="/logo.png" alt="JOKI" className="h-10 w-auto" />

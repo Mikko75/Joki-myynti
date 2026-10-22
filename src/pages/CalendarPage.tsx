@@ -51,11 +51,11 @@ interface SpaceBooking {
 }
 
 const STATUS_COLORS: Record<WorkOrderStatus, string> = {
-  uusi: 'bg-blue-500 text-white',
-  tyonalla: 'bg-amber-500 text-white',
-  asiakkaalla: 'bg-yellow-400 text-gray-900',
+  uusi:        'bg-blue-500 text-white',
+  tyonalla:    'bg-amber-500 text-white',
+  asiakkaalla: 'bg-purple-500 text-white',
   vahvistettu: 'bg-emerald-500 text-white',
-  ei_toteudu: 'bg-gray-400 text-white',
+  ei_toteudu:  'bg-gray-400 text-white',
 }
 
 const WEEKDAY_HEADERS = ['Ma', 'Ti', 'Ke', 'To', 'Pe', 'La', 'Su']

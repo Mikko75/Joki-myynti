@@ -208,17 +208,33 @@ export default function SchedulePage() {
     <div className="space-y-6">
       <WorkOrderHeader workOrder={workOrder} title="Aikataulu" />
 
+      {aikatauluProposal?.status === "sent" && (
+        <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+          <span className="text-amber-600 text-[13px]">⚠️</span>
+          <p className="text-[13px] text-amber-800 flex-1">Aikatauluehdotus odottaa asiakkaan hyväksyntää. Muutokset palauttavat sen tilaksi "Odottaa myyjää".</p>
+        </div>
+      )}
       {hasChangesRequested && (
         <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
           <div className="flex h-7 w-7 items-center justify-center rounded-full bg-red-100 shrink-0">
             <span className="text-red-600 text-[13px] font-bold">!</span>
           </div>
-          <div>
+          <div className="flex-1">
             <p className="text-[14px] font-semibold text-red-900">Asiakas pyytää muutoksia aikatauluun</p>
             {aikatauluProposal?.clientComment && (
               <p className="text-[13px] text-red-700 mt-0.5">"{aikatauluProposal.clientComment}"</p>
             )}
           </div>
+          <button
+            onClick={() => updateWorkOrder(workOrderId, {
+              proposalSections: (workOrder.proposalSections ?? []).map(p =>
+                p.sectionKey === "aikataulu" ? { ...p, status: "sent" as const, clientComment: undefined } : p
+              )
+            })}
+            className="flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 px-3 py-1.5 text-[12px] font-medium hover:bg-emerald-100 transition-colors shrink-0"
+          >
+            ✓ Merkitse käsitellyksi
+          </button>
         </div>
       )}
 

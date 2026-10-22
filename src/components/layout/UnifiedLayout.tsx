@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils"
 import {
   SIDEBAR_SHADOW_CLASS,
   SIDEBAR_WIDTH_CLASS,
+  WORK_ORDER_SIDEBAR_BG,
   NAV_ITEM_TEXT_CLASS,
   NAV_ITEM_ACTIVE_CLASS,
   NAV_ICON_CLASS,
@@ -136,7 +137,7 @@ export function UnifiedLayout() {
     <div className="flex h-full overflow-hidden">
       {/* Sidebar */}
       {sidebarExpanded ? (
-        <aside className={cn("flex flex-col bg-white shrink-0 overflow-hidden", SIDEBAR_SHADOW_CLASS, SIDEBAR_WIDTH_CLASS)}>
+        <aside className={cn("flex flex-col shrink-0 overflow-hidden", WORK_ORDER_SIDEBAR_BG, SIDEBAR_SHADOW_CLASS, SIDEBAR_WIDTH_CLASS)}>
           <div className="flex flex-col gap-6 p-4 flex-1 overflow-hidden">
             {/* Collapse toggle */}
             <div className="flex items-center justify-end">
@@ -151,13 +152,13 @@ export function UnifiedLayout() {
 
             {/* Partner identity */}
             {isPartner && (
-              <div className="pb-4 border-b border-gray-200">
+              <div className="pb-4 border-b border-gray-700">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-bold text-white shrink-0" style={{ backgroundColor: modeInfo.color }}>
                     {modeInfo.initials}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{modeInfo.name}</p>
+                    <p className="text-sm font-medium text-gray-200 truncate">{modeInfo.name}</p>
                     <p className="text-xs text-gray-500 truncate">{modeInfo.role}</p>
                   </div>
                 </div>
@@ -213,7 +214,7 @@ export function UnifiedLayout() {
 
         </aside>
       ) : (
-        <aside className={cn("flex flex-col items-center bg-white shrink-0 overflow-hidden py-4", SIDEBAR_SHADOW_CLASS)}>
+        <aside className={cn("flex flex-col items-center shrink-0 overflow-hidden py-4", WORK_ORDER_SIDEBAR_BG, SIDEBAR_SHADOW_CLASS)}>
           {/* Expand toggle */}
           <button
             onClick={toggleSidebar}
@@ -230,13 +231,12 @@ export function UnifiedLayout() {
       <div className="flex flex-1 flex-col min-w-0">
         <TopBar
           breadcrumbs={[
-            { label: isPartner ? modeInfo.role : isClient ? "Asiakasportaali" : "Työmääräin", to: "/" },
             { label: `${workOrder.number} • ${workOrder.customerCompany}`, to: `/tyomarain/${id}/yleiskuva` },
             { label: sectionLabel },
           ]}
         />
         <div className="flex flex-1 overflow-hidden">
-          <main className="flex-1 overflow-auto p-6 lg:p-8 bg-[rgba(249,250,251,0.8)]">
+          <main className="flex-1 overflow-auto bg-[rgba(249,250,251,0.8)]" style={{ padding: "var(--spacing-content)" }}>
             <Outlet />
           </main>
           {(isSeller && (lastSegment === "yleiskuva" || lastSegment === "catering" || lastSegment === "av")) && <RightPanel />}

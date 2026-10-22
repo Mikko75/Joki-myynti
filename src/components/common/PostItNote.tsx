@@ -10,8 +10,6 @@ export const POST_IT_COLORS: Record<PostItColor, { bg: string; text: string; bor
   purple: { bg: "#E9D5FF", text: "#581C87", border: "#C4B5FD", dot: "bg-purple-300" },
 }
 
-const ROTATIONS = [-2.1, 1.4, -1.0, 2.3, -1.7, 0.8, -2.5, 1.1]
-
 interface PostItNoteProps {
   note: PostItNoteType
   index: number
@@ -20,12 +18,11 @@ interface PostItNoteProps {
   readOnly?: boolean
 }
 
-export function PostItNoteCard({ note, index, onUpdate, onDelete, readOnly }: PostItNoteProps) {
+export function PostItNoteCard({ note, index: _index, onUpdate, onDelete, readOnly }: PostItNoteProps) {
   const [editing, setEditing] = useState(false)
   const [text, setText] = useState(note.text)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const colors = POST_IT_COLORS[note.color]
-  const rotation = ROTATIONS[index % ROTATIONS.length]
 
   useEffect(() => {
     if (editing && textareaRef.current) {
@@ -45,8 +42,6 @@ export function PostItNoteCard({ note, index, onUpdate, onDelete, readOnly }: Po
     <div
       className="relative group shrink-0"
       style={{
-        transform: `rotate(${rotation}deg)`,
-        transition: "transform 0.15s ease",
         width: 180,
         minHeight: 160,
       }}

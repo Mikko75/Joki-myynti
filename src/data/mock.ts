@@ -126,9 +126,9 @@ export const workOrders: WorkOrder[] = [
         doorsOpen: '08:00',
         guestsLeave: '--',
         spaces: [
-          { spaceId: 'space-1', spaceName: 'Cave-teatteri', role: 'Pääsali', optionStatus: 'Ei asetettu', price: 1800 },
-          { spaceId: 'space-2', spaceName: 'Aula', role: 'Vastaanotto', optionStatus: 'Ei asetettu', price: 800 },
-          { spaceId: 'space-3', spaceName: 'Neuvotteluhuone 2.krs', role: 'Breakout', optionStatus: 'Ei asetettu', price: 300 },
+          { spaceId: 'space-1', spaceName: 'Cave-teatteri', role: 'Pääsali', status: 'vahvistettu' as const, price: 1800 },
+          { spaceId: 'space-2', spaceName: 'Aula', role: 'Vastaanotto', status: 'optio' as const, optionDeadline: '2027-10-14', price: 800 },
+          { spaceId: 'space-3', spaceName: 'Neuvotteluhuone 2.krs', role: 'Breakout', status: 'optio' as const, price: 300 },
         ],
         scheduleItems: scheduleItemsDay1,
       },

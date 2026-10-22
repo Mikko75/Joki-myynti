@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { CheckCircle2, RotateCcw, MessageSquare, Clock, Calendar, Users, MapPin, UtensilsCrossed, Mic, Lightbulb, MonitorPlay, Construction, Radio } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -6,6 +6,7 @@ import { Card, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useWorkOrders } from "@/context/WorkOrderContext"
 import { useMenus } from "@/context/MenuContext"
+import { useChat } from "@/context/ChatContext"
 import { SectionChat } from "@/components/common/SectionChat"
 import { spaces as spaceCatalog } from "@/data/mock"
 import { cn } from "@/lib/utils"
@@ -25,6 +26,7 @@ const AREA_ICONS: Record<string, typeof Mic> = {
 
 export default function ProposalView({ workOrderId }: { workOrderId: string }) {
   const { getWorkOrder, updateWorkOrder, getAllCateringPlans, getAVPlan } = useWorkOrders()
+  const { sendMessage } = useChat()
   const [activeCateringTab, setActiveCateringTab] = useState<string | null>(null)
   const { menus } = useMenus()
   const workOrder = getWorkOrder(workOrderId)
@@ -45,7 +47,10 @@ export default function ProposalView({ workOrderId }: { workOrderId: string }) {
   const allCateringPlans = getAllCateringPlans(workOrderId)
   const cateringOptions = Object.entries(allCateringPlans).filter(([pid, p]) => pid !== "_default" && p.status === "valmis")
   const avPlan = getAVPlan(workOrderId)
-  const allApproved = proposals.length > 0 && proposals.every((p) => p.status === "approved")
+  const mainSectionKeys = ["tilat", "aikataulu", "catering", "lisapalvelut"]
+  const allApproved = mainSectionKeys.every(key =>
+    proposals.find(p => p.sectionKey === key)?.status === "approved"
+  )
 
   const day = wo.eventDays[0]
   const allSpaces = wo.eventDays.flatMap((d) => d.spaces)
@@ -53,6 +58,17 @@ export default function ProposalView({ workOrderId }: { workOrderId: string }) {
   const avProduction = wo.avProduction
   const activeAreas = avProduction?.productionAreas.filter((a) => a.status !== "ei_tarvita") ?? []
   const customSections = wo.customSections ?? []
+
+  // Merkitään kaikki näkyvät sent-osiot luetuiksi kun asiakas avaa sivun
+  useEffect(() => {
+    const toMark = (wo.proposalSections ?? []).filter(p => p.status === "sent" && !p.clientReadAt)
+    if (toMark.length === 0) return
+    const now = new Date().toLocaleString("fi-FI")
+    const updated = (wo.proposalSections ?? []).map(p =>
+      toMark.some(m => m.sectionKey === p.sectionKey) ? { ...p, clientReadAt: now } : p
+    )
+    updateWorkOrder(workOrderId, { proposalSections: updated })
+  }, [])
 
   function approve(sectionKey: string) {
     const updated = (wo.proposalSections ?? []).map((p) =>
@@ -66,6 +82,15 @@ export default function ProposalView({ workOrderId }: { workOrderId: string }) {
       p.sectionKey === sectionKey ? { ...p, status: "changes_requested" as const, clientComment: commentText || undefined } : p
     )
     updateWorkOrder(workOrderId, { proposalSections: updated })
+    if (commentText.trim()) {
+      sendMessage(sectionKey, commentText.trim(), {
+        name: wo.customerName ?? "Asiakas",
+        initials: (wo.customerName ?? "AS").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase(),
+        color: "#6366f1",
+        role: "client",
+        roleLabel: "Asiakas",
+      })
+    }
     setCommentFor(null)
     setCommentText("")
   }
@@ -132,6 +157,7 @@ export default function ProposalView({ workOrderId }: { workOrderId: string }) {
             </div>
           </div>
         )}
+
       </div>
     )
   }
@@ -196,6 +222,47 @@ export default function ProposalView({ workOrderId }: { workOrderId: string }) {
           <p className="text-[15px] font-semibold text-emerald-800">Kaikki osiot hyväksytty</p>
           <p className="text-[12px] text-emerald-600 mt-1">Kiitos! Olemme yhteydessä tapahtuman järjestelyistä.</p>
         </div>
+      )}
+
+      {/* TAPAHTUMAVAHVISTUS */}
+      {getProposal("perustiedot") && (
+        <Card>
+          <div className="flex items-center justify-between mb-3">
+            <CardTitle>Tapahtumavahvistus</CardTitle>
+            <Badge className={cn("text-[10px]", STATUS_META[getProposal("perustiedot")!.status].badge)}>
+              {STATUS_META[getProposal("perustiedot")!.status].label}
+            </Badge>
+          </div>
+          {getProposal("perustiedot")!.sellerMessage ? (
+            <div className="mb-4 bg-gray-50 border-l-2 border-gray-300 pl-4 py-3">
+              <p className="text-[13px] text-gray-700 leading-relaxed whitespace-pre-line">
+                {getProposal("perustiedot")!.sellerMessage}
+              </p>
+            </div>
+          ) : (
+            <p className="text-[12px] text-gray-500 mb-3">
+              Tarkistathan alla olevat tiedot. Jos jotain pitää korjata, pyydä muutoksia.
+            </p>
+          )}
+          <div className="space-y-0">
+            {([
+              { label: "Yhtiö / yhteisö", value: wo.customerCompany },
+              { label: "Tapahtumatyyppi", value: wo.eventType || "–" },
+              { label: "Osallistujia", value: `${wo.participantEstimate} hlö` },
+              day ? { label: "Päivämäärä", value: day.date } : null,
+              day ? { label: "Kellonaika", value: `${day.bookingStart}–${day.bookingEnd}` } : null,
+              { label: "Catering", value: wo.needsCatering === "yes" ? "Kyllä" : wo.needsCatering === "no" ? "Ei" : "–" },
+              { label: "AV-tekniikka", value: wo.needsAV === "yes" ? "Kyllä" : wo.needsAV === "no" ? "Ei" : "–" },
+              wo.eventDescription ? { label: "Kuvaus", value: wo.eventDescription } : null,
+            ] as const).filter((item): item is { label: string; value: string } => item !== null).map((item) => (
+              <div key={item.label} className="flex items-start justify-between gap-4 py-2 border-b border-gray-100 last:border-0">
+                <span className="text-[12px] text-gray-500 shrink-0">{item.label}</span>
+                <span className="text-[13px] font-medium text-gray-900 text-right">{item.value}</span>
+              </div>
+            ))}
+          </div>
+          {renderActions("perustiedot")}
+        </Card>
       )}
 
       {/* TILAT */}

@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input"
 import { InfoBanner } from "@/components/common/InfoBanner"
 import { DayTabs } from "@/components/common/DayTabs"
 import { PostItBoard } from "@/components/common/PostItBoard"
-import { SectionChat } from "@/components/common/SectionChat"
 import { WorkOrderHeader } from "@/components/layout/WorkOrderHeader"
 import { spaces as allSpaces } from "@/data/mock"
 import { useCurrentWorkOrder } from "@/hooks/useCurrentWorkOrder"
@@ -26,7 +25,7 @@ export default function SpacesPage() {
   const currentDayId = activeDay || workOrder.eventDays[0]?.id || ""
   const currentDay = workOrder.eventDays.find((d) => d.id === currentDayId)
   const selectedSpaces = currentDay?.spaces ?? []
-  const selectedIds = new Set(selectedSpaces.map((s) => s.spaceId))
+  const selectedIds = new Set(selectedSpaces.filter(s => s.status !== "vapautettu").map((s) => s.spaceId))
 
   const filtered = allSpaces.filter((s) => {
     if (searchQuery && !s.name.toLowerCase().includes(searchQuery.toLowerCase())) return false
@@ -42,7 +41,7 @@ export default function SpacesPage() {
       spaceId: space.id,
       spaceName: space.name,
       role: "",
-      optionStatus: "optio",
+      status: "optio" as const,
       price: space.pricePerDay,
     }
 
@@ -80,22 +79,40 @@ export default function SpacesPage() {
 
   const tilatProposal = workOrder.proposalSections?.find(p => p.sectionKey === "tilat")
   const hasChangesRequested = tilatProposal?.status === "changes_requested"
+  const hasSentProposal = tilatProposal?.status === "sent"
 
   return (
     <div className="space-y-6">
       <WorkOrderHeader workOrder={workOrder} title="Tilat ja optiot" />
+
+      {hasSentProposal && (
+        <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+          <span className="text-amber-600 text-[13px]">⚠️</span>
+          <p className="text-[13px] text-amber-800 flex-1">Tilaehdotus odottaa asiakkaan hyväksyntää. Muutokset tähän osioon palauttavat sen tilaksi "Odottaa myyjää".</p>
+        </div>
+      )}
 
       {hasChangesRequested && (
         <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
           <div className="flex h-7 w-7 items-center justify-center rounded-full bg-red-100 shrink-0">
             <span className="text-red-600 text-[13px] font-bold">!</span>
           </div>
-          <div>
+          <div className="flex-1">
             <p className="text-[14px] font-semibold text-red-900">Asiakas pyytää muutoksia tiloihin</p>
             {tilatProposal?.clientComment && (
               <p className="text-[13px] text-red-700 mt-0.5">"{tilatProposal.clientComment}"</p>
             )}
           </div>
+          <button
+            onClick={() => updateWorkOrder(workOrderId, {
+              proposalSections: (workOrder.proposalSections ?? []).map(p =>
+                p.sectionKey === "tilat" ? { ...p, status: "sent" as const, clientComment: undefined } : p
+              )
+            })}
+            className="flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 px-3 py-1.5 text-[12px] font-medium hover:bg-emerald-100 transition-colors shrink-0"
+          >
+            ✓ Merkitse käsitellyksi
+          </button>
         </div>
       )}
 
@@ -216,65 +233,105 @@ export default function SpacesPage() {
 
           {/* Selected spaces — ALAPUOLELLA */}
           {selectedSpaces.length > 0 && (
-            <div className="rounded-xl border border-gray-200 bg-white p-5">
-              <h2 className="text-[14px] font-semibold text-gray-900 mb-3">
-                Valitut tilat · {selectedSpaces.length}
-              </h2>
-              <div className="flex flex-wrap gap-2">
-                {selectedSpaces.map((es) => (
-                  <div
-                    key={es.spaceId}
-                    className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2"
-                  >
-                    <MapPin className="h-3.5 w-3.5 text-emerald-600" />
-                    <span className="text-[13px] font-medium text-emerald-800">{es.spaceName}</span>
-                    <Badge variant="outline" className="text-[10px] border-emerald-300 text-emerald-700">Optio</Badge>
-                    <span className="text-[12px] text-emerald-600 font-medium">{es.price.toLocaleString("fi-FI")} €</span>
-                    <button
-                      className="ml-1 p-0.5 text-emerald-400 hover:text-red-500 transition-colors"
-                      onClick={() => removeSpace(es.spaceId)}
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
+            <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-3">
+              <h2 className="text-[14px] font-semibold text-gray-900">Varaukset · {selectedSpaces.length} tilaa</h2>
+
+              {selectedSpaces.map((es) => {
+                const statusConfig = {
+                  optio:       { label: "Alustavasti varattu", badge: "bg-amber-100 text-amber-700", border: "border-amber-200 bg-amber-50/30" },
+                  vahvistettu: { label: "Vahvistettu",         badge: "bg-emerald-100 text-emerald-700", border: "border-emerald-200 bg-emerald-50/30" },
+                  vapautettu:  { label: "Vapautettu",          badge: "bg-red-100 text-red-700", border: "border-red-200 bg-red-50/30" },
+                }[es.status] ?? { label: es.status, badge: "bg-gray-100 text-gray-600", border: "border-gray-200" }
+
+                return (
+                  <div key={es.spaceId} className={`rounded-xl border p-4 ${statusConfig.border}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <MapPin className="h-4 w-4 text-gray-400 shrink-0" />
+                        <div>
+                          <p className="text-[14px] font-semibold text-gray-900">{es.spaceName}</p>
+                          <p className="text-[12px] text-gray-500">{es.role} · {es.price.toLocaleString("fi-FI")} €</p>
+                          {es.optionDeadline && es.status === "optio" && (
+                            <p className="text-[11px] text-amber-600 mt-0.5">
+                              Optio voimassa: {new Date(es.optionDeadline).toLocaleDateString("fi-FI")}
+                            </p>
+                          )}
+                          {es.releaseReason && (
+                            <p className="text-[11px] text-red-600 mt-0.5">Syy: {es.releaseReason}</p>
+                          )}
+                        </div>
+                      </div>
+                      <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full shrink-0 ${statusConfig.badge}`}>
+                        {statusConfig.label}
+                      </span>
+                    </div>
+
+                    {/* Toimintopainikkeet */}
+                    <div className="flex items-center gap-2 mt-3 flex-wrap">
+                      {es.status === "optio" && (
+                        <Button size="sm" variant="outline" className="text-[12px] gap-1 h-7"
+                          onClick={() => {
+                            const updated = currentDay!.spaces.map(s => s.spaceId === es.spaceId ? { ...s, status: "vahvistettu" as const } : s)
+                            updateWorkOrder(workOrderId, { eventDays: workOrder!.eventDays.map(d => d.id === currentDay!.id ? { ...d, spaces: updated } : d) })
+                          }}>
+                          <Check className="h-3 w-3" /> Vahvista
+                        </Button>
+                      )}
+                      {es.status === "vahvistettu" && (
+                        <Button size="sm" variant="outline" className="text-[12px] gap-1 h-7"
+                          onClick={() => {
+                            const updated = currentDay!.spaces.map(s => s.spaceId === es.spaceId ? { ...s, status: "optio" as const } : s)
+                            updateWorkOrder(workOrderId, { eventDays: workOrder!.eventDays.map(d => d.id === currentDay!.id ? { ...d, spaces: updated } : d) })
+                          }}>
+                          Palauta optioon
+                        </Button>
+                      )}
+                      {es.status !== "vapautettu" && (
+                        <Button size="sm" variant="outline"
+                          className="text-[12px] gap-1 h-7 text-red-600 border-red-200 hover:bg-red-50"
+                          onClick={() => {
+                            const reason = window.prompt("Syy vapautukselle?\n\n1. Isompi tapahtuma\n2. Asiakas perui\n3. Muu\n\nKirjoita syy:")
+                            if (reason === null) return
+                            const updated = currentDay!.spaces.map(s => s.spaceId === es.spaceId ? { ...s, status: "vapautettu" as const, releaseReason: reason || "Ei syytä" } : s)
+                            updateWorkOrder(workOrderId, { eventDays: workOrder!.eventDays.map(d => d.id === currentDay!.id ? { ...d, spaces: updated } : d) })
+                          }}>
+                          Vapauta tila
+                        </Button>
+                      )}
+                      {es.status === "vapautettu" && (
+                        <Button size="sm" variant="outline" className="text-[12px] gap-1 h-7"
+                          onClick={() => {
+                            const updated = currentDay!.spaces.map(s => s.spaceId === es.spaceId ? { ...s, status: "optio" as const, releaseReason: undefined } : s)
+                            updateWorkOrder(workOrderId, { eventDays: workOrder!.eventDays.map(d => d.id === currentDay!.id ? { ...d, spaces: updated } : d) })
+                          }}>
+                          Palauta optioon
+                        </Button>
+                      )}
+                      <button
+                        className="text-[11px] text-gray-400 hover:text-red-500 transition-colors ml-auto"
+                        onClick={() => removeSpace(es.spaceId)}
+                      >
+                        Poista
+                      </button>
+                    </div>
                   </div>
-                ))}
-              </div>
-              <div className="mt-4 flex items-center justify-between pt-3 border-t border-gray-100">
-                <div>
-                  <p className="text-[13px] font-semibold text-gray-900">
-                    Yhteensä: {selectedSpaces.reduce((sum, s) => sum + s.price, 0).toLocaleString("fi-FI")} €
-                  </p>
-                  <p className="text-[11px] text-gray-500">{selectedSpaces.length} tilaa valittu</p>
-                </div>
-                {workOrder.sectionStatuses.tila === "valmis" ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-100 px-3 py-1.5 text-[13px] font-medium text-emerald-700">
-                    <Check className="h-3.5 w-3.5" />
-                    Vahvistettu
-                  </span>
-                ) : (
-                  <Button
-                    size="sm"
-                    className="gap-1.5"
-                    onClick={() => {
-                      updateWorkOrder(workOrderId, {
-                        sectionStatuses: { ...workOrder!.sectionStatuses, tila: "valmis" },
-                      })
-                      setShowSuccess("Tilavalinta vahvistettu")
-                      setTimeout(() => setShowSuccess(""), 3000)
-                      window.scrollTo({ top: 0, behavior: "smooth" })
-                    }}
-                  >
-                    <Check className="h-3.5 w-3.5" />
-                    Vahvista tilavalinta
-                  </Button>
-                )}
+                )
+              })}
+
+              <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                <p className="text-[13px] font-semibold text-gray-900">
+                  Yhteensä: {selectedSpaces.reduce((sum, s) => sum + s.price, 0).toLocaleString("fi-FI")} €
+                </p>
+                <p className="text-[11px] text-gray-500">
+                  {selectedSpaces.filter(s => s.status === "vahvistettu").length} vahvistettu /
+                  {selectedSpaces.filter(s => s.status === "optio").length} optio
+                </p>
               </div>
             </div>
           )}
 
 
           <PostItBoard sectionKey="tilat" />
-          <SectionChat sectionKey="tilat" />
         </>
       )}
     </div>

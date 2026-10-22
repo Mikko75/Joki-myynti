@@ -20,10 +20,6 @@ export default function ConversationsPage() {
         <SectionChat sectionKey="av" />
       </div>
 
-      <div>
-        <h2 className="text-[14px] font-semibold text-gray-700 mb-2">Tilat</h2>
-        <SectionChat sectionKey="tilat" />
-      </div>
     </div>
   )
 }

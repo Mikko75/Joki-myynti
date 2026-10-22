@@ -93,7 +93,7 @@ export default function LomakePage() {
               spaceId: found.id,
               spaceName: found.name,
               role: "Pääsali",
-              optionStatus: "optio",
+              status: "optio" as const,
               price: found.pricePerDay,
             }
             return [es]

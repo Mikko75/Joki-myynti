@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import { Link } from "react-router-dom"
-import { Calendar } from "lucide-react"
+import { Calendar, Users, MessageSquare } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface StatusRowItem {
@@ -32,6 +32,9 @@ interface WorkOrderSectionCardProps {
   dateLabel?: string
   statusRow?: StatusRowItem[]
   note?: string
+  participantCount?: number
+  messageCount?: number
+  thumbnails?: { url: string; label: string }[]
 }
 
 export function WorkOrderSectionCard({
@@ -50,6 +53,9 @@ export function WorkOrderSectionCard({
   dateLabel,
   statusRow,
   note,
+  participantCount,
+  messageCount,
+  thumbnails,
 }: WorkOrderSectionCardProps) {
   const isClickable = Boolean(to || onClick)
   const Wrapper = to ? Link : "div"
@@ -60,9 +66,10 @@ export function WorkOrderSectionCard({
       {...(wrapperProps as any)}
       onClick={!to ? onClick : undefined}
       className={cn(
-        "flex flex-col rounded-xl border border-gray-200 bg-white p-5 transition-all",
-        isClickable ? "no-underline hover:shadow-md hover:border-gray-300 cursor-pointer" : ""
+        "flex flex-col bg-white transition-all",
+        isClickable ? "no-underline hover:shadow-md cursor-pointer" : ""
       )}
+      style={{ padding: "var(--spacing-card)" }}
     >
       <div className="flex items-start">
         <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold", badgeClassName)}>
@@ -80,12 +87,25 @@ export function WorkOrderSectionCard({
             <span className="text-gray-500">Progress</span>
             <span className="font-bold text-gray-900">{progress}%</span>
           </div>
-          <div className="mt-1.5 h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
+          <div className="mt-1.5 h-1.5 w-full bg-gray-100 overflow-hidden">
             <div
-              className={cn("h-full rounded-full transition-all", progressColor ?? "bg-primary-600")}
+              className={cn("h-full transition-all", progressColor ?? "bg-primary-600")}
               style={{ width: `${progress}%` }}
             />
           </div>
+        </div>
+      )}
+
+      {thumbnails && thumbnails.length > 0 && (
+        <div className="mt-4 flex gap-2 overflow-hidden">
+          {thumbnails.slice(0, 3).map((t) => (
+            <div key={t.label} className="relative h-16 w-24 shrink-0 overflow-hidden bg-gray-100">
+              <img src={t.url} alt={t.label} className="h-full w-full object-cover" />
+              <div className="absolute bottom-0 inset-x-0 bg-black/40 px-1 py-0.5">
+                <p className="text-[9px] text-white truncate font-medium">{t.label}</p>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -112,23 +132,36 @@ export function WorkOrderSectionCard({
         </div>
       )}
 
-      <div className="mt-auto pt-4 flex items-center justify-between">
-        <div className="flex items-center">
-          {members.slice(0, 3).map((m, i) => (
-            <div
-              key={m.id}
-              className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold text-white border-2 border-white"
-              style={{ backgroundColor: m.color, marginLeft: i > 0 ? "-8px" : "0" }}
-              title={m.name}
-            >
-              {m.initials}
-            </div>
-          ))}
+      {/* Footer — Figma-design */}
+      <div className="mt-auto pt-3 border-t border-gray-100 flex items-center gap-4">
+        {/* Avatarit */}
+        {members.length > 0 && (
+          <div className="flex items-center mr-1">
+            {members.slice(0, 3).map((m, i) => (
+              <div
+                key={m.id}
+                className="flex h-6 w-6 items-center justify-center rounded-full text-[9px] font-bold text-white border-2 border-white"
+                style={{ backgroundColor: m.color, marginLeft: i > 0 ? "-6px" : "0" }}
+                title={m.name}
+              >
+                {m.initials}
+              </div>
+            ))}
+          </div>
+        )}
+
+
+        {/* Viestit */}
+        <div className="flex items-center gap-1 text-[14px] font-semibold text-[#1e293b] tracking-tight">
+          <MessageSquare className="h-4 w-4 text-[#94a3b8]" />
+          <span>{messageCount ?? 0}</span>
         </div>
+
+        {/* Päivämäärä */}
         {dateLabel && (
-          <div className="flex items-center gap-1.5 text-[12px] text-gray-400">
-            <Calendar className="h-3.5 w-3.5" />
-            {dateLabel}
+          <div className="flex items-center gap-1 text-[14px] font-semibold text-[#1e293b] tracking-tight ml-auto">
+            <Calendar className="h-4 w-4 text-[#94a3b8]" />
+            <span>{dateLabel}</span>
           </div>
         )}
       </div>

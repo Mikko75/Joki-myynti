@@ -1,10 +1,11 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 
-function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+function Card({ className, style, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("rounded-xl border border-gray-200 bg-white p-6", className)}
+      className={cn("rounded-xl border border-gray-200 bg-white", className)}
+      style={{ padding: "var(--spacing-card)", ...style }}
       {...props}
     />
   )

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { useLocation } from "react-router-dom"
-import { X, Send, ChevronDown, ChevronUp, PanelRightClose, PanelRightOpen, CheckCircle2, Clock, RotateCcw, Plus } from "lucide-react"
+import { X, Send, ChevronDown, ChevronUp, PanelRightClose, PanelRightOpen, CheckCircle2, Clock, RotateCcw, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useCurrentWorkOrder } from "@/hooks/useCurrentWorkOrder"
@@ -33,6 +33,7 @@ function calcDefaultDeadline(eventDate?: string): string {
 }
 
 const SECTION_LABELS: Record<string, string> = {
+  perustiedot: "Tapahtumavahvistus",
   tilat: "Tilat",
   aikataulu: "Aikataulu",
   catering: "Catering",
@@ -144,6 +145,21 @@ export function RightPanel() {
 
   function getSectionContent(key: string): { lines: { label: string; value: string }[]; total?: number } {
     switch (key) {
+      case "perustiedot": {
+        const day = wo.eventDays[0]
+        const lines: { label: string; value: string }[] = [
+          { label: "Yhtiö", value: wo.customerCompany },
+          { label: "Tapahtumatyyppi", value: wo.eventType ?? "–" },
+          { label: "Osallistujat", value: `${wo.participantEstimate} hlö` },
+        ]
+        if (day) {
+          lines.push({ label: "Päivämäärä", value: day.date })
+          lines.push({ label: "Aika", value: `${day.bookingStart}–${day.bookingEnd}` })
+        }
+        lines.push({ label: "Catering", value: wo.needsCatering === "yes" ? "Kyllä" : "Ei" })
+        lines.push({ label: "AV-tekniikka", value: wo.needsAV === "yes" ? "Kyllä" : "Ei" })
+        return { lines }
+      }
       case "tilat":
         return {
           lines: allSpaces.map((s) => ({ label: s.spaceName, value: formatPrice(s.price) })),
@@ -356,6 +372,28 @@ export function RightPanel() {
                   </div>
                 )}
 
+                {/* Lukuvastaanotto — näytetään kun asiakas on avannut */}
+                {p.status === "sent" && p.clientReadAt && (
+                  <div className="px-3 pb-1.5 flex items-center gap-1 text-[10px] text-blue-600">
+                    <span>●</span>
+                    <span>Avattu {p.clientReadAt}</span>
+                  </div>
+                )}
+                {p.status === "sent" && !p.clientReadAt && (
+                  <div className="px-3 pb-1.5 flex items-center gap-1 text-[10px] text-gray-400">
+                    <span>○</span>
+                    <span>Ei vielä avattu</span>
+                  </div>
+                )}
+
+                {/* Viesti — perustiedot-osion esikatselu */}
+                {p.sectionKey === "perustiedot" && p.sellerMessage && (
+                  <div className="px-3 pb-2 border-t border-gray-100 pt-2">
+                    <p className="text-[10px] font-medium text-gray-400 mb-1">Viesti</p>
+                    <p className="text-[11px] text-gray-600 leading-relaxed line-clamp-2">{p.sellerMessage}</p>
+                  </div>
+                )}
+
                 {/* Deadline — sent-tilassa näytetään */}
                 {p.status === "sent" && p.deadline && (
                   <div className="px-3 pb-2 flex items-center gap-1.5 text-[10px] text-amber-600">
@@ -394,7 +432,7 @@ export function RightPanel() {
         </div>
       ) : (
         <div className="flex-1 flex flex-col items-center justify-center gap-3">
-          <img src="/puthere.png" alt="" className="h-14 w-auto opacity-80" />
+          <FileText className="h-10 w-10 text-gray-200" />
           <p className="text-[12px] text-gray-400 text-center">Lisää osioita ehdotukseen<br />painamalla + korteista</p>
         </div>
       )}

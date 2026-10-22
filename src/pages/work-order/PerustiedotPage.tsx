@@ -9,7 +9,7 @@ import { WorkOrderHeader } from "@/components/layout/WorkOrderHeader"
 import { useCurrentWorkOrder } from "@/hooks/useCurrentWorkOrder"
 import { useWorkOrders } from "@/context/WorkOrderContext"
 import { cn } from "@/lib/utils"
-import type { Attachment } from "@/data/types"
+import type { Attachment, PostItNote } from "@/data/types"
 
 type EditSection = "asiakas" | "tapahtuma" | "tarpeet" | "kuvaus" | null
 
@@ -30,10 +30,12 @@ export default function PerustiedotPage() {
 
   function addNote() {
     if (!newNote.trim()) return
-    const note = {
+    const note: PostItNote = {
       id: `note-${Date.now()}`,
       text: newNote.trim(),
       createdAt: new Date().toLocaleString("fi-FI"),
+      color: "yellow",
+      sectionKey: "yleinen",
     }
     updateWorkOrder(workOrderId, { notes: [...notes, note] })
     setNewNote("")
@@ -84,6 +86,22 @@ export default function PerustiedotPage() {
   return (
     <div className="space-y-6">
       <WorkOrderHeader workOrder={wo} title="Perustiedot" />
+
+      {/* Asiakkaan päivitysilmoitus */}
+      {wo.clientUpdatedAt && (
+        <div className="flex items-center justify-between rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+          <div className="flex items-center gap-2 text-[13px] text-blue-800">
+            <span className="h-2 w-2 rounded-full bg-blue-500 shrink-0" />
+            <span><span className="font-semibold">Asiakas päivitti tietoja</span> — {new Date(wo.clientUpdatedAt).toLocaleDateString("fi-FI")} klo {new Date(wo.clientUpdatedAt).toLocaleTimeString("fi-FI", { hour: "2-digit", minute: "2-digit" })}</span>
+          </div>
+          <button
+            onClick={() => updateWorkOrder(workOrderId, { clientUpdatedAt: undefined })}
+            className="text-[12px] font-medium text-blue-600 hover:text-blue-800 border border-blue-200 rounded-lg px-3 py-1.5 hover:bg-blue-100 transition-colors shrink-0 ml-4"
+          >
+            Merkitse nähdyksi
+          </button>
+        </div>
+      )}
 
       {/* Asiakas */}
       <Card>

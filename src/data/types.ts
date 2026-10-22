@@ -17,6 +17,8 @@ export interface ProposalSection {
   sentAt: string | null
   status: ProposalSectionStatus
   clientComment?: string
+  sellerMessage?: string
+  clientReadAt?: string
   deadline?: string
   partnerId?: string
 }
@@ -188,11 +190,15 @@ export interface Space {
   image?: string
 }
 
+export type SpaceStatus = "optio" | "vahvistettu" | "vapautettu"
+
 export interface EventSpace {
   spaceId: string
   spaceName: string
   role: string
-  optionStatus: string
+  status: SpaceStatus
+  optionDeadline?: string
+  releaseReason?: string
   price: number
 }
 

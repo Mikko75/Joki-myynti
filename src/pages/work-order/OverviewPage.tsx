@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom"
+import { spaces as spaceCatalog } from "@/data/mock"
 import { WorkOrderHeader } from "@/components/layout/WorkOrderHeader"
 import { WorkOrderSectionCard } from "@/components/common/WorkOrderSectionCard"
 import { useCurrentWorkOrder } from "@/hooks/useCurrentWorkOrder"
@@ -6,9 +7,12 @@ import { useWorkOrders } from "@/context/WorkOrderContext"
 import { useTeam } from "@/context/TeamContext"
 import { InfoBanner } from "@/components/common/InfoBanner"
 import { SectionChat } from "@/components/common/SectionChat"
+import { useChat } from "@/context/ChatContext"
 import { PostItBoard } from "@/components/common/PostItBoard"
 import { useState, useRef, useEffect } from "react"
-import { Plus, Info, CheckCircle2, Music, ShieldCheck, Signpost, Armchair, Truck, Users, CarFront, Hotel, FileCheck, Handshake, Star, MoreHorizontal, User, Calendar, Clock, Utensils, Volume2, Link2, RotateCcw } from "lucide-react"
+import { Textarea } from "@/components/ui/textarea"
+import { Button } from "@/components/ui/button"
+import { Plus, Info, CheckCircle2, Music, ShieldCheck, Signpost, Armchair, Truck, Users, CarFront, Hotel, FileCheck, Handshake, Star, MoreHorizontal, User, Calendar, Clock, Utensils, Volume2, Link2, RotateCcw, MapPin, Send, X } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import type { SectionStatus, ProposalSection, CustomSection } from "@/data/types"
 
@@ -45,10 +49,13 @@ export default function OverviewPage() {
   const { workOrder, workOrderId } = useCurrentWorkOrder()
   const { getCateringPlan, getAllCateringPlans, getAVPlan, updateWorkOrder } = useWorkOrders()
   const { getMembersForSection } = useTeam()
+  const { getMessages } = useChat()
 
   const [emptyWarning, setEmptyWarning] = useState<string | null>(null)
   const [addNewOpen, setAddNewOpen] = useState(false)
   const addNewRef = useRef<HTMLDivElement>(null)
+  const [composeOpen, setComposeOpen] = useState(false)
+  const [composeMessage, setComposeMessage] = useState("")
 
   useEffect(() => {
     if (!addNewOpen) return
@@ -60,6 +67,7 @@ export default function OverviewPage() {
     document.addEventListener("mousedown", handleClick)
     return () => document.removeEventListener("mousedown", handleClick)
   }, [addNewOpen])
+
 
   if (!workOrder) return <p className="text-gray-500">Työmääräintä ei löytynyt.</p>
 
@@ -91,6 +99,7 @@ export default function OverviewPage() {
   const avNeeds = wo.avProduction?.needs ?? []
 
   const sectionHasData: Record<string, boolean> = {
+    perustiedot: true,
     tilat: allSpaces.length > 0,
     aikataulu: allScheduleItems.length > 0,
     catering: hasCateringData,
@@ -161,6 +170,11 @@ export default function OverviewPage() {
   const lisapalvelutProposal = proposals.find(p => p.sectionKey === "lisapalvelut")
   const lisapalvelutP = proposalProgress(lisapalvelutProposal)
 
+  const tilaThumbails = allSpaces
+    .slice(0, 3)
+    .map(s => ({ url: spaceCatalog.find(sc => sc.id === s.spaceId)?.image ?? "", label: s.spaceName }))
+    .filter(t => t.url)
+
   const sections = [
     { key: "tilat", title: "Tilat", subtitle: `${allSpaces.length} tilaa valittu`, description: allSpaces.length > 0 ? allSpaces.map((s) => s.spaceName).join(", ") : "Ei aloitettu.", badgeLabel: tila.label, badgeClass: tila.badge, progress: tilaP.pct, progressColor: tilaP.color },
     { key: "aikataulu", title: "Aikataulu", subtitle: `${allScheduleItems.length} ohjelmakohtaa`, description: allScheduleItems.length > 0 ? allScheduleItems.map((i) => i.title).slice(0, 3).join(", ") : "Ei aloitettu.", badgeLabel: aikataulu.label, badgeClass: aikataulu.badge, progress: aikatauluP.pct, progressColor: aikatauluP.color },
@@ -171,41 +185,6 @@ export default function OverviewPage() {
   return (
     <div>
       <WorkOrderHeader workOrder={wo} title="Yleiskuva" />
-
-      {/* Kutsu asiakas portaaliin — ensimmäinen asia */}
-      {(() => {
-        const portalUrl = `${window.location.origin}/tyomarain/${workOrderId}/ehdotus`
-        const customerEmail = wo.customerEmail ?? ""
-        return (
-          <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 space-y-4">
-            <h2 className="text-[15px] font-semibold text-gray-900">Kutsu asiakas portaaliin</h2>
-            <p className="text-[13px] text-gray-500">
-              Jaa portaalilinkki asiakkaalle heti — asiakas pääsee seuraamaan tapahtumansa etenemistä ja päivittämään tietojaan.
-            </p>
-            <div className="flex items-center gap-2">
-              <input type="email" defaultValue={customerEmail} placeholder="asiakkaan@sahkoposti.fi"
-                className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-[13px] text-gray-700 focus:outline-none focus:ring-1 focus:ring-gray-400"
-                id="invite-email-input" />
-              <button id="invite-send-btn"
-                onClick={() => {
-                  const btn = document.getElementById("invite-send-btn")
-                  if (btn) { btn.textContent = "Kutsu lähetetty ✓"; setTimeout(() => { btn.textContent = "Lähetä kutsu" }, 3000) }
-                }}
-                className="flex items-center gap-1.5 rounded-lg bg-gray-900 text-white px-4 py-2 text-[12px] font-medium hover:bg-gray-800 transition-colors shrink-0">
-                Lähetä kutsu
-              </button>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 font-mono text-[11px] text-gray-400 truncate">{portalUrl}</div>
-              <button id="portal-copy-btn"
-                onClick={() => { navigator.clipboard.writeText(portalUrl).then(() => { const btn = document.getElementById("portal-copy-btn"); if (btn) { btn.textContent = "Kopioitu!"; setTimeout(() => { btn.textContent = "Kopioi linkki" }, 2000) } }) }}
-                className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-[12px] font-medium text-gray-600 hover:border-gray-300 transition-colors shrink-0">
-                <Link2 className="h-3.5 w-3.5" /> Kopioi linkki
-              </button>
-            </div>
-          </div>
-        )
-      })()}
 
       {/* Info / status notice */}
       <div className="mb-5">
@@ -258,6 +237,7 @@ export default function OverviewPage() {
         {/* Perustiedot — ikonillinen grid */}
         {(() => {
           const day = wo.eventDays[0]
+          const perustiedotProposal = proposals.find(p => p.sectionKey === "perustiedot")
           const infoItems = [
             { icon: User, label: "Yhteyshenkilö", value: wo.customerName || "–" },
             { icon: Users, label: "Osallistujat", value: `${wo.participantEstimate} hlö` },
@@ -267,32 +247,152 @@ export default function OverviewPage() {
             { icon: Utensils, label: "Tarvitaanko catering", value: wo.needsCatering === "yes" ? "Kyllä" : wo.needsCatering === "no" ? "Ei" : "–" },
             { icon: Volume2, label: "Tarvitaanko AV", value: wo.needsAV === "yes" ? "Kyllä" : wo.needsAV === "no" ? "Ei" : "–" },
           ]
+          const openCompose = () => {
+            const firstName = wo.customerName?.split(" ")[0] ?? wo.customerName ?? ""
+            const isIncoming = wo.source === "varausjarjestelma"
+            const draft = isIncoming
+              ? `Hei ${firstName},\n\nKiitos yhteydenotosta! Olemme kirjanneet alla tapahtumanne tiedot. Tarkistathan että kaikki on oikein ja kerro meille jos jotain pitää muuttaa.\n\nTerveisin,\nJOKI-tiimi`
+              : `Hei ${firstName},\n\n`
+            setComposeMessage(draft)
+            setComposeOpen(true)
+          }
+
           return (
-            <Link
-              to={`${base}/perustiedot`}
-              className="block rounded-xl border border-gray-200 bg-white p-5 no-underline hover:shadow-md hover:border-gray-300 transition-all"
-            >
-              <div className="mb-4">
-                <h3 className="text-lg font-bold text-gray-900">{wo.customerCompany}</h3>
-                {wo.eventDescription && (
-                  <p className="mt-1 text-[13px] text-gray-600 leading-relaxed">{wo.eventDescription}</p>
+            <div className="bg-white overflow-hidden">
+              <Link
+                to={`${base}/perustiedot`}
+                className="block p-5 no-underline hover:bg-gray-50 transition-all"
+              >
+                <div className="mb-4">
+                  <h3 className="text-lg font-bold text-gray-900">{wo.customerCompany}</h3>
+                  {wo.eventDescription && (
+                    <p className="mt-1 text-[13px] text-gray-600 leading-relaxed">{wo.eventDescription}</p>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {infoItems.map((item) => {
+                    const Icon = item.icon
+                    return (
+                      <div key={item.label} className="flex items-center gap-3">
+                        <Icon className="h-5 w-5 text-gray-400 shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-[11px] text-gray-500">{item.label}</p>
+                          <p className="text-[13px] font-semibold text-gray-900 truncate">{item.value}</p>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </Link>
+
+              {/* CTA-palkki kortin alla */}
+              <div className="border-t border-gray-100 px-5 py-3 flex flex-col gap-2">
+                {wo.clientUpdatedAt && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-[12px] text-blue-600 font-medium">
+                      <span className="h-2 w-2 rounded-full bg-blue-500 shrink-0" />
+                      Asiakas päivitti tietoja — {new Date(wo.clientUpdatedAt).toLocaleDateString("fi-FI")}
+                    </div>
+                    <button
+                      onClick={() => updateWorkOrder(workOrderId, { clientUpdatedAt: undefined })}
+                      className="text-[11px] text-gray-400 hover:text-gray-600 underline shrink-0 ml-3"
+                    >
+                      Merkitse nähdyksi
+                    </button>
+                  </div>
+                )}
+              <div className="flex items-center justify-between">
+                {perustiedotProposal?.status === "approved" ? (
+                  <div className="flex items-center gap-2 text-[13px] text-emerald-600">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span className="font-medium">Asiakas vahvistanut tiedot</span>
+                  </div>
+                ) : perustiedotProposal?.status === "sent" ? (
+                  <>
+                    <span className="text-[12px] font-medium" style={{ color: perustiedotProposal.clientReadAt ? "#2563eb" : "#d97706" }}>
+                      {perustiedotProposal.clientReadAt ? `Avattu ${perustiedotProposal.clientReadAt}` : "Tapahtumavahvistus lähetetty — ei vielä avattu"}
+                    </span>
+                    <button
+                      onClick={openCompose}
+                      className="text-[12px] text-gray-400 hover:text-gray-600 underline shrink-0 ml-3"
+                    >
+                      Lähetä uudelleen
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-[12px] text-gray-400">
+                      {wo.source === "varausjarjestelma"
+                        ? "Ei vielä vastattu asiakkaalle"
+                        : "Ei vielä lähetetty asiakkaalle"}
+                    </span>
+                    <button
+                      onClick={openCompose}
+                      className="flex items-center gap-1.5 bg-gray-900 text-white text-[12px] font-medium px-4 py-2 hover:bg-gray-800 transition-colors shrink-0"
+                    >
+                      <Send className="h-3.5 w-3.5" />
+                      {wo.source === "varausjarjestelma"
+                        ? "Vastaa asiakkaalle"
+                        : "Lähetä asiakkaalle"}
+                    </button>
+                  </>
                 )}
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {infoItems.map((item) => {
-                  const Icon = item.icon
-                  return (
-                    <div key={item.label} className="flex items-center gap-3">
-                      <Icon className="h-5 w-5 text-gray-400 shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-[11px] text-gray-500">{item.label}</p>
-                        <p className="text-[13px] font-semibold text-gray-900 truncate">{item.value}</p>
-                      </div>
-                    </div>
-                  )
-                })}
+            </div>
+          </div>
+          )
+        })()}
+
+        {/* Kutsu asiakas portaaliin — kompakti nappi */}
+        {(() => {
+          const portalUrl = `${window.location.origin}/tyomarain/${workOrderId}/ehdotus`
+          const [showModal, setShowModal] = useState(false)
+          return (
+            <>
+              <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3">
+                <div className="flex items-center gap-2 text-[13px] text-gray-600">
+                  <Link2 className="h-4 w-4 text-gray-400" />
+                  <span>Kutsu asiakas portaaliin</span>
+                  {wo.customerEmail && <span className="text-gray-400">— {wo.customerEmail}</span>}
+                </div>
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="text-[12px] font-medium text-gray-900 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-colors"
+                >
+                  Jaa linkki
+                </button>
               </div>
-            </Link>
+
+              {showModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowModal(false)}>
+                  <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4 space-y-4" onClick={e => e.stopPropagation()}>
+                    <h3 className="text-[16px] font-semibold text-gray-900">Kutsu asiakas portaaliin</h3>
+                    <div className="flex items-center gap-2">
+                      <input type="email" defaultValue={wo.customerEmail ?? ""} placeholder="asiakkaan@sahkoposti.fi"
+                        className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-[13px] focus:outline-none focus:ring-1 focus:ring-gray-400"
+                        id="modal-invite-email" />
+                      <button id="modal-send-btn"
+                        onClick={() => {
+                          const btn = document.getElementById("modal-send-btn")
+                          if (btn) { btn.textContent = "Lähetetty ✓"; setTimeout(() => { btn.textContent = "Lähetä"; setShowModal(false) }, 1500) }
+                        }}
+                        className="rounded-lg bg-gray-900 text-white px-4 py-2 text-[13px] font-medium hover:bg-gray-800 shrink-0">
+                        Lähetä
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 font-mono text-[11px] text-gray-400 truncate">{portalUrl}</div>
+                      <button id="modal-copy-btn"
+                        onClick={() => { navigator.clipboard.writeText(portalUrl).then(() => { const btn = document.getElementById("modal-copy-btn"); if (btn) { btn.textContent = "Kopioitu!"; setTimeout(() => { btn.textContent = "Kopioi" }, 1500) } }) }}
+                        className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-[12px] font-medium text-gray-600 hover:border-gray-300 shrink-0">
+                        Kopioi
+                      </button>
+                    </div>
+                    <button onClick={() => setShowModal(false)} className="w-full text-[12px] text-gray-400 hover:text-gray-600">Sulje</button>
+                  </div>
+                </div>
+              )}
+            </>
           )
         })()}
 
@@ -301,10 +401,13 @@ export default function OverviewPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {sections.map((s) => {
             const proposal = proposals.find((p) => p.sectionKey === s.key)
+            const isRead = proposal?.status === "sent" && !!proposal.clientReadAt
             // Catering "sent" tarkoittaa kumppanilla, ei asiakkaalla
             const proposalMeta = proposal
               ? (s.key === "catering" && proposal.status === "sent"
                   ? { label: "Kumppanilla", badge: "bg-amber-100 text-amber-700" }
+                  : isRead
+                  ? { label: "Avattu", badge: "bg-blue-100 text-blue-700" }
                   : PROPOSAL_STATUS_META[proposal.status])
               : null
 
@@ -329,18 +432,38 @@ export default function OverviewPage() {
                   members={getMembersForSection(s.key)}
                   dateLabel={eventDate}
                   note={proposal?.status === "changes_requested" && proposal.clientComment ? `Asiakas: "${proposal.clientComment}"` : undefined}
+                  participantCount={
+                    s.key === "tilat" ? allSpaces.length
+                    : s.key === "catering" ? cateringPlan.moments.length
+                    : s.key === "aikataulu" ? allScheduleItems.length
+                    : 0
+                  }
+                  messageCount={getMessages(s.key).length}
+                  thumbnails={s.key === "tilat" ? tilaThumbails : undefined}
                 />
                 {hasCateringResponse && (
                   <span className="absolute top-2 left-2 z-10 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white" title="Kumppani on vastannut" />
                 )}
 
-                {/* Muutospyyntö — selkeä "Lähetä uudelleen" */}
+                {/* Muutospyyntö — toiminnot */}
                 {proposal?.status === "changes_requested" && (
-                  <div className="absolute bottom-4 right-4 z-10">
+                  <div className="absolute bottom-4 right-4 z-10 flex gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault(); e.stopPropagation()
+                        updateWorkOrder(workOrderId, {
+                          proposalSections: (wo.proposalSections ?? []).map(p =>
+                            p.sectionKey === s.key ? { ...p, status: "sent" as const, clientComment: undefined } : p
+                          )
+                        })
+                      }}
+                      className="flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 px-2.5 py-1.5 text-[11px] font-medium hover:bg-emerald-100 transition-colors shadow-sm"
+                    >
+                      ✓ Käsitelty
+                    </button>
                     <button
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); addToProposal(s.key) }}
-                      className="flex items-center gap-1.5 rounded-lg bg-gray-900 text-white px-3 py-1.5 text-[11px] font-medium hover:bg-gray-800 transition-colors shadow-sm"
-                      title="Tee muutokset ja lisää uudelleen ehdotukseen"
+                      className="flex items-center gap-1.5 rounded-lg bg-gray-900 text-white px-2.5 py-1.5 text-[11px] font-medium hover:bg-gray-800 transition-colors shadow-sm"
                     >
                       <RotateCcw className="h-3 w-3" />
                       Lähetä uudelleen
@@ -365,6 +488,7 @@ export default function OverviewPage() {
                     </button>
                   </div>
                 )}
+
               </div>
             )
           })}
@@ -462,6 +586,93 @@ export default function OverviewPage() {
         <h2 className="text-[15px] font-semibold text-gray-900 mb-2">Keskustelu asiakkaan kanssa</h2>
         <SectionChat sectionKey="asiakas" />
       </div>
+
+      {/* Compose-modali — Tapahtumavahvistus */}
+      {composeOpen && (() => {
+        const day = wo.eventDays[0]
+        const eventInfoRows = [
+          { label: "Yhtiö", value: wo.customerCompany },
+          { label: "Tapahtumatyyppi", value: wo.eventType },
+          { label: "Osallistujia", value: `${wo.participantEstimate} hlö` },
+          day ? { label: "Päivämäärä", value: day.date } : null,
+          day ? { label: "Kellonaika", value: `${day.bookingStart}–${day.bookingEnd}` } : null,
+          { label: "Catering", value: wo.needsCatering === "yes" ? "Kyllä" : wo.needsCatering === "no" ? "Ei" : "–" },
+          { label: "AV-tekniikka", value: wo.needsAV === "yes" ? "Kyllä" : wo.needsAV === "no" ? "Ei" : "–" },
+        ].filter(Boolean) as { label: string; value: string }[]
+
+        function addToDraft() {
+          const existing = proposals.find(p => p.sectionKey === "perustiedot")
+          const entry = {
+            ...(existing ?? {}),
+            sectionKey: "perustiedot",
+            sentAt: null,
+            status: "draft" as const,
+            sellerMessage: composeMessage,
+          }
+          const updatedSections = existing
+            ? proposals.map(p => p.sectionKey === "perustiedot" ? entry : p)
+            : [...proposals, entry]
+          updateWorkOrder(workOrderId, { proposalSections: updatedSections })
+          setComposeOpen(false)
+        }
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setComposeOpen(false)}>
+            <div className="bg-white w-full max-w-lg shadow-2xl" onClick={e => e.stopPropagation()}>
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                <div>
+                  <p className="text-[15px] font-semibold text-gray-900">
+                    {wo.source === "varausjarjestelma" ? "Vastaa asiakkaalle" : "Lähetä asiakkaalle"}
+                  </p>
+                  {wo.customerEmail && (
+                    <p className="text-[12px] text-gray-400 mt-0.5">Vastaanottaja: {wo.customerEmail}</p>
+                  )}
+                </div>
+                <button onClick={() => setComposeOpen(false)} className="text-gray-400 hover:text-gray-600 p-1">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Viesti */}
+              <div className="px-5 pt-4">
+                <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-1.5">Viesti asiakkaalle</p>
+                <Textarea
+                  value={composeMessage}
+                  onChange={e => setComposeMessage(e.target.value)}
+                  rows={5}
+                  className="text-[13px] text-gray-700 leading-relaxed resize-none"
+                  autoFocus
+                />
+              </div>
+
+              {/* Tapahtuman tiedot */}
+              <div className="px-5 pt-4 pb-2">
+                <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-2">Tapahtuman tiedot (näkyy asiakkaalle)</p>
+                <div className="bg-gray-50 px-3 py-2 space-y-1.5">
+                  {eventInfoRows.map(row => (
+                    <div key={row.label} className="flex items-center justify-between text-[12px]">
+                      <span className="text-gray-500">{row.label}</span>
+                      <span className="font-medium text-gray-800">{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Napit */}
+              <div className="flex items-center gap-2 px-5 py-4 border-t border-gray-100">
+                <Button variant="outline" size="sm" onClick={() => setComposeOpen(false)} className="flex-1">
+                  Peruuta
+                </Button>
+                <Button size="sm" onClick={addToDraft} className="flex-1 gap-1.5 bg-gray-900 hover:bg-gray-800">
+                  <Send className="h-3.5 w-3.5" />
+                  Lisää ehdotukseen
+                </Button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
