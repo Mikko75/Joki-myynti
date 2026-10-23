@@ -329,8 +329,8 @@ export default function KanbanPage() {
           )}
         </div>
 
-        {/* Haku */}
-        <div className="relative">
+        {/* Haku — vain desktopilla */}
+        <div className="relative hidden sm:block">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <Input
             placeholder="Etsi..."
