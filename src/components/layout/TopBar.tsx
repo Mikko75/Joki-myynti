@@ -77,10 +77,12 @@ export function TopBar({ breadcrumbs, onMenuOpen }: TopBarProps) {
   return (
     <header className="flex h-16 items-center justify-between border-b border-[#ebedf0] bg-white px-6 shrink-0">
       <div className="flex items-center gap-1 min-w-0">
-        {/* Mobiili: takaisin valkoisen headerin vasemmassa reunassa */}
-        <Link to="/" className="sm:hidden flex items-center justify-center size-8 text-gray-700 hover:text-gray-900 no-underline shrink-0">
-          <ChevronLeft className="h-5 w-5" />
-        </Link>
+        {/* Mobiili: takaisin — vain työmääräimen sisällä */}
+        {onMenuOpen && (
+          <Link to="/" className="sm:hidden flex items-center justify-center size-8 text-gray-700 hover:text-gray-900 no-underline shrink-0">
+            <ChevronLeft className="h-5 w-5" />
+          </Link>
+        )}
         <button
           onClick={handleBack}
           className="hidden sm:flex items-center justify-center rounded-lg size-8 text-[#66707a] hover:text-gray-900 hover:bg-gray-100 transition-colors shrink-0"
