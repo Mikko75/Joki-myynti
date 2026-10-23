@@ -281,7 +281,7 @@ export default function ProposalView({ workOrderId }: { workOrderId: string }) {
                 <div key={es.spaceId} className="rounded-lg border border-gray-200 bg-gray-50 p-4">
                   {detail?.image && (
                     <div className="h-28 w-full overflow-hidden rounded-lg mb-3">
-                      <img src={detail.image} alt={es.spaceName} className="h-full w-full object-cover" />
+                      <img src={detail.image} alt={es.spaceName} className="h-full w-full object-cover" loading="lazy" />
                     </div>
                   )}
                   <p className="text-[14px] font-semibold text-gray-900">{es.spaceName}</p>

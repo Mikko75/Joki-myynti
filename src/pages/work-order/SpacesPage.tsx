@@ -169,7 +169,7 @@ export default function SpacesPage() {
                 >
                   {space.image && (
                     <div className="h-36 w-full overflow-hidden">
-                      <img src={space.image} alt={space.name} className="h-full w-full object-cover" />
+                      <img src={space.image} alt={space.name} className="h-full w-full object-cover" loading="lazy" />
                     </div>
                   )}
 

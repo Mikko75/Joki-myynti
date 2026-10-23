@@ -27,7 +27,7 @@ export default function App() {
             <TemplateProvider>
             <ModeProvider>
             <BrowserRouter>
-              <div className="flex flex-col h-screen">
+              <div className="flex flex-col h-screen overflow-x-hidden">
                 <ModeSwitcher />
                 <div className="flex flex-1 overflow-hidden">
                   <Routes>

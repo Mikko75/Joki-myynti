@@ -100,7 +100,7 @@ export function WorkOrderSectionCard({
         <div className="mt-4 flex gap-2 overflow-hidden">
           {thumbnails.slice(0, 3).map((t) => (
             <div key={t.label} className="relative h-16 w-24 shrink-0 overflow-hidden bg-gray-100">
-              <img src={t.url} alt={t.label} className="h-full w-full object-cover" />
+              <img src={t.url} alt={t.label} className="h-full w-full object-cover" loading="lazy" />
               <div className="absolute bottom-0 inset-x-0 bg-black/40 px-1 py-0.5">
                 <p className="text-[9px] text-white truncate font-medium">{t.label}</p>
               </div>
