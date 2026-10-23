@@ -246,26 +246,28 @@ export function UnifiedLayout() {
               </button>
             </div>
             <nav className="flex flex-col gap-1 px-3 flex-1 overflow-y-auto">
-              {navItems.map((item) => {
-                const Icon = item.icon
-                const isActive = lastSegment === item.id
-                return (
-                  <Link
-                    key={item.id}
-                    to={`/tyomarain/${id}/${item.id}`}
-                    onClick={() => setMobileNavOpen(false)}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-3 text-[14px] font-medium transition-colors no-underline",
-                      isActive
-                        ? "text-white bg-gray-700"
-                        : "text-gray-300 hover:text-white hover:bg-gray-700"
-                    )}
-                  >
-                    <Icon className="h-5 w-5 shrink-0" />
-                    {item.label}
-                  </Link>
-                )
-              })}
+              {navItems
+                .filter(item => !["yleiskuva", "tilat", "catering", "tarjous"].includes(item.id))
+                .map((item) => {
+                  const Icon = item.icon
+                  const isActive = lastSegment === item.id
+                  return (
+                    <Link
+                      key={item.id}
+                      to={`/tyomarain/${id}/${item.id}`}
+                      onClick={() => setMobileNavOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-3 text-[14px] font-medium transition-colors no-underline",
+                        isActive
+                          ? "text-white bg-gray-700"
+                          : "text-gray-300 hover:text-white hover:bg-gray-700"
+                      )}
+                    >
+                      <Icon className="h-5 w-5 shrink-0" />
+                      {item.label}
+                    </Link>
+                  )
+                })}
             </nav>
           </aside>
         </div>
