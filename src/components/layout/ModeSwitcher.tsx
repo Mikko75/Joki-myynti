@@ -58,7 +58,7 @@ export function ModeSwitcher() {
   }
 
   return (
-    <div className="flex items-center gap-1.5 bg-gray-900 px-4 py-1.5 shrink-0 overflow-x-auto">
+    <div className="hidden sm:flex items-center gap-1.5 bg-gray-900 px-4 py-1.5 shrink-0 overflow-x-auto">
       <span className="text-[11px] text-gray-500 font-medium mr-2 uppercase tracking-wider shrink-0">Näkymä</span>
 
       {/* Seller — always available */}
