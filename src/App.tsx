@@ -7,6 +7,7 @@ import { MenuProvider } from '@/context/MenuContext'
 import { CustomerEnrichmentProvider } from '@/context/CustomerEnrichmentContext'
 import { TemplateProvider } from '@/context/TemplateContext'
 import { ModeSwitcher } from '@/components/layout/ModeSwitcher'
+import { PasswordGate } from '@/components/PasswordGate'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { MainSidebar } from '@/components/layout/MainSidebar'
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav'
@@ -27,6 +28,7 @@ export default function App() {
             <TemplateProvider>
             <ModeProvider>
             <BrowserRouter>
+            <PasswordGate>
               <div className="flex flex-col h-screen overflow-x-hidden">
                 <ModeSwitcher />
                 <div className="flex flex-1 overflow-hidden">
@@ -59,6 +61,7 @@ export default function App() {
                   </Routes>
                 </div>
               </div>
+            </PasswordGate>
             </BrowserRouter>
             </ModeProvider>
             </TemplateProvider>
