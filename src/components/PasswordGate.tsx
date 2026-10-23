@@ -1,6 +1,6 @@
 import { useState } from "react"
 
-const DEMO_PASSWORD = "joki2026"
+const DEMO_PASSWORD = ")xWKF8ww76y7uSyAR3AcUH,xS=%"
 const STORAGE_KEY = "joki-demo-auth"
 
 export function PasswordGate({ children }: { children: React.ReactNode }) {
