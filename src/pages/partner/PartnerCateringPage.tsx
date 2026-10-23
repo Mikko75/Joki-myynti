@@ -66,7 +66,7 @@ export default function PartnerCateringPage() {
       {/* Tapahtuman tiedot — read-only */}
       <div className="rounded-xl border border-gray-200 bg-white p-6 space-y-4">
         <h3 className="text-[14px] font-semibold text-gray-900">Tapahtuman tiedot</h3>
-        <div className="grid grid-cols-2 gap-x-12 gap-y-3 text-[13px]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-4 text-[13px]">
           <div className="flex justify-between">
             <span className="text-gray-500">Asiakas</span>
             <span className="font-medium text-gray-900">{workOrder.customerCompany}</span>
