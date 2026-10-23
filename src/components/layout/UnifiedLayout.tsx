@@ -2,7 +2,8 @@ import { useState } from "react"
 import { Outlet, useParams, useLocation, Link } from "react-router-dom"
 import {
   LayoutDashboard, DoorOpen, CalendarDays, UtensilsCrossed, PlusCircle,
-  Video, MessageSquare, FileText, FileCheck, ChevronsLeft, ChevronsRight, Edit3,
+  Video, MessageSquare, FileText, FileCheck, ChevronsLeft, ChevronsRight, ChevronLeft, Edit3, Menu, X,
+  // X ja FileText käytetään myös mobile bottom sheetissä
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { TopBar } from "./TopBar"
@@ -55,6 +56,8 @@ export function UnifiedLayout() {
     const stored = localStorage.getItem("joki-sidebar-expanded")
     return stored !== null ? stored === "true" : true
   })
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [mobileProposalOpen, setMobileProposalOpen] = useState(false)
 
   if (!workOrder) {
     return (
@@ -137,7 +140,7 @@ export function UnifiedLayout() {
     <div className="flex h-full overflow-hidden">
       {/* Sidebar */}
       {sidebarExpanded ? (
-        <aside className={cn("flex flex-col shrink-0 overflow-hidden", WORK_ORDER_SIDEBAR_BG, SIDEBAR_SHADOW_CLASS, SIDEBAR_WIDTH_CLASS)}>
+        <aside className={cn("hidden md:flex flex-col shrink-0 overflow-hidden", WORK_ORDER_SIDEBAR_BG, SIDEBAR_SHADOW_CLASS, SIDEBAR_WIDTH_CLASS)}>
           <div className="flex flex-col gap-6 p-4 flex-1 overflow-hidden">
             {/* Collapse toggle */}
             <div className="flex items-center justify-end">
@@ -214,7 +217,7 @@ export function UnifiedLayout() {
 
         </aside>
       ) : (
-        <aside className={cn("flex flex-col items-center shrink-0 overflow-hidden py-4", WORK_ORDER_SIDEBAR_BG, SIDEBAR_SHADOW_CLASS)}>
+        <aside className={cn("hidden md:flex flex-col items-center shrink-0 overflow-hidden py-4", WORK_ORDER_SIDEBAR_BG, SIDEBAR_SHADOW_CLASS)}>
           {/* Expand toggle */}
           <button
             onClick={toggleSidebar}
@@ -227,6 +230,47 @@ export function UnifiedLayout() {
         </aside>
       )}
 
+      {/* Mobile drawer overlay */}
+      {mobileNavOpen && (
+        <div className="fixed inset-0 z-40 md:hidden" onClick={() => setMobileNavOpen(false)}>
+          <div className="absolute inset-0 bg-black/50" />
+          <aside
+            className="absolute left-0 top-0 bottom-0 flex flex-col overflow-hidden"
+            style={{ width: 280, backgroundColor: "var(--color-sidebar-workorder)" }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-4">
+              <span className="text-[13px] font-semibold text-gray-300">Navigaatio</span>
+              <button onClick={() => setMobileNavOpen(false)} className="text-gray-400 hover:text-white">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <nav className="flex flex-col gap-1 px-3 flex-1 overflow-y-auto">
+              {navItems.map((item) => {
+                const Icon = item.icon
+                const isActive = lastSegment === item.id
+                return (
+                  <Link
+                    key={item.id}
+                    to={`/tyomarain/${id}/${item.id}`}
+                    onClick={() => setMobileNavOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-3 text-[14px] font-medium transition-colors no-underline",
+                      isActive
+                        ? "text-white bg-gray-700"
+                        : "text-gray-300 hover:text-white hover:bg-gray-700"
+                    )}
+                  >
+                    <Icon className="h-5 w-5 shrink-0" />
+                    {item.label}
+                  </Link>
+                )
+              })}
+            </nav>
+          </aside>
+        </div>
+      )}
+
       {/* Main content */}
       <div className="flex flex-1 flex-col min-w-0">
         <TopBar
@@ -234,6 +278,7 @@ export function UnifiedLayout() {
             { label: `${workOrder.number} • ${workOrder.customerCompany}`, to: `/tyomarain/${id}/yleiskuva` },
             { label: sectionLabel },
           ]}
+          onMenuOpen={() => setMobileNavOpen(true)}
         />
         <div className="flex flex-1 overflow-hidden">
           <main className="flex-1 overflow-auto bg-[rgba(249,250,251,0.8)]" style={{ padding: "var(--spacing-content)" }}>
@@ -242,6 +287,43 @@ export function UnifiedLayout() {
           {(isSeller && (lastSegment === "yleiskuva" || lastSegment === "catering" || lastSegment === "av")) && <RightPanel />}
           {isPartner && (lastSegment === "catering" || lastSegment === "av") && <RightPanel />}
         </div>
+
+        {/* Mobiili: Ehdotus floating nappi */}
+        {isSeller && (lastSegment === "yleiskuva" || lastSegment === "catering" || lastSegment === "av") && (() => {
+          const proposalCount = (workOrder.proposalSections ?? []).filter(p => p.status === "draft" || p.status === "sent").length
+          return (
+            <button
+              onClick={() => setMobileProposalOpen(true)}
+              className="lg:hidden fixed bottom-20 right-4 z-30 flex items-center gap-2 rounded-full bg-gray-900 text-white px-4 py-2.5 text-[13px] font-semibold shadow-lg"
+            >
+              <FileText className="h-4 w-4" />
+              Ehdotus
+              {proposalCount > 0 && (
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--color-brand-green)] text-black text-[11px] font-bold px-1">
+                  {proposalCount}
+                </span>
+              )}
+            </button>
+          )
+        })()}
+
+        {/* Mobiili: RightPanel bottom sheet */}
+        {mobileProposalOpen && (
+          <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end">
+            <div className="absolute inset-0 bg-black/40" onClick={() => setMobileProposalOpen(false)} />
+            <div className="relative bg-white overflow-hidden flex flex-col max-h-[85vh]" style={{ borderRadius: "20px 20px 0 0" }}>
+              <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 shrink-0">
+                <span className="text-[15px] font-semibold text-gray-900">Ehdotus</span>
+                <button onClick={() => setMobileProposalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto">
+                <RightPanel mobile />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

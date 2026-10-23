@@ -44,7 +44,7 @@ function formatPrice(v: number) {
   return v.toLocaleString("fi-FI") + " €"
 }
 
-export function RightPanel() {
+export function RightPanel({ mobile = false }: { mobile?: boolean }) {
   const { workOrder, workOrderId } = useCurrentWorkOrder()
   const { getCateringPlan, updateCateringPlan, getAVPlan, updateWorkOrder } = useWorkOrders()
   const location = useLocation()
@@ -234,7 +234,7 @@ export function RightPanel() {
 
   if (!isOpen) {
     return (
-      <div className="hidden lg:flex shrink-0 border-l border-gray-200" style={{ backgroundColor: "#F8FAFC" }}>
+      <div className={mobile ? "flex shrink-0 border-l border-gray-200" : "hidden lg:flex shrink-0 border-l border-gray-200"} style={{ backgroundColor: "#F8FAFC" }}>
         <button onClick={() => setIsOpen(true)} className="p-3 text-gray-400 hover:text-gray-600 transition-colors" title="Avaa">
           <PanelRightOpen className="h-5 w-5" />
         </button>
@@ -243,7 +243,7 @@ export function RightPanel() {
   }
 
   return (
-    <aside className="hidden lg:flex w-80 shrink-0 flex-col overflow-y-auto border-l border-gray-200 p-5" style={{ backgroundColor: "#F8FAFC" }}>
+    <aside className={mobile ? "flex w-full flex-col overflow-y-auto p-5" : "hidden lg:flex w-80 shrink-0 flex-col overflow-y-auto border-l border-gray-200 p-5"} style={{ backgroundColor: "#F8FAFC" }}>
       <div className="flex items-center justify-between">
         <h3 className="text-[15px] font-semibold text-gray-900">
           {isCateringSeller || isAVSeller ? "Ehdotus kumppanille" : isPartnerPage ? "Ehdotus myyjälle" : "Ehdotus asiakkaalle"}

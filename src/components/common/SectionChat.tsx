@@ -93,12 +93,11 @@ export function SectionChat({ sectionKey, partnerId }: SectionChatProps) {
       </div>
 
       <div className="px-4 py-3 border-t border-gray-100">
-        <div className="flex items-center gap-2 rounded-full border border-gray-300 bg-white pl-4 pr-1.5 py-1.5">
-          <span className="text-gray-900 text-lg font-light select-none">+</span>
+        <div className="flex items-center gap-2">
           <input
             type="text"
-            placeholder="Lähetä viesti"
-            className="flex-1 text-[14px] outline-none placeholder:text-gray-500 bg-transparent"
+            placeholder="Lähetä viesti..."
+            className="flex-1 text-[14px] outline-none placeholder:text-gray-400 bg-transparent border-b border-gray-200 pb-1 min-w-0"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
@@ -108,12 +107,6 @@ export function SectionChat({ sectionKey, partnerId }: SectionChatProps) {
               }
             }}
           />
-          <button className="p-2 text-gray-500 hover:text-gray-900 transition-colors">
-            <Mic className="h-5 w-5" />
-          </button>
-          <button className="p-2 text-gray-500 hover:text-gray-900 transition-colors">
-            <Paperclip className="h-5 w-5" />
-          </button>
           <button
             className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-900 text-white hover:bg-gray-800 transition-colors shrink-0"
             onClick={handleSend}

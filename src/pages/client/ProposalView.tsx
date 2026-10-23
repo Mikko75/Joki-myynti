@@ -106,11 +106,11 @@ export default function ProposalView({ workOrderId }: { workOrderId: string }) {
     return (
       <div className="mt-4 pt-3 border-t border-gray-100">
         {p.status === "sent" && (
-          <div className="flex gap-2">
-            <Button size="sm" onClick={() => approve(sectionKey)} className="gap-1.5">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button size="sm" onClick={() => approve(sectionKey)} className="gap-1.5 w-full sm:w-auto">
               <CheckCircle2 className="h-3.5 w-3.5" /> Hyväksy
             </Button>
-            <Button size="sm" variant="outline" onClick={() => { setCommentFor(sectionKey); setCommentText("") }} className="gap-1.5">
+            <Button size="sm" variant="outline" onClick={() => { setCommentFor(sectionKey); setCommentText("") }} className="gap-1.5 w-full sm:w-auto">
               <RotateCcw className="h-3.5 w-3.5" /> Pyydä muutoksia
             </Button>
           </div>

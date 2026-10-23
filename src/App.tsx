@@ -9,6 +9,7 @@ import { TemplateProvider } from '@/context/TemplateContext'
 import { ModeSwitcher } from '@/components/layout/ModeSwitcher'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { MainSidebar } from '@/components/layout/MainSidebar'
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav'
 import KanbanPage from '@/pages/KanbanPage'
 import CalendarPage from '@/pages/CalendarPage'
 import NewLeadWrapper from '@/pages/NewLeadWrapper'
@@ -41,7 +42,8 @@ export default function App() {
                     <Route path="*" element={
                       <>
                         <MainSidebar />
-                        <div className="flex-1 overflow-hidden">
+                        <MobileBottomNav />
+                        <div className="flex-1 overflow-hidden pb-16 md:pb-0">
                           <Routes>
                             <Route element={<MainLayout />}>
                               <Route index element={<KanbanPage />} />

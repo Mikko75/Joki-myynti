@@ -1,6 +1,6 @@
 import { useState } from "react"
-import { Home, Search, Bell, ChevronRight, Plus, Check } from "lucide-react"
-import { useNavigate, useLocation } from "react-router-dom"
+import { Home, Search, Bell, ChevronRight, ChevronLeft, Plus, Check, Menu } from "lucide-react"
+import { useNavigate, useLocation, Link } from "react-router-dom"
 import { useTeam } from "@/context/TeamContext"
 import { useWorkOrders } from "@/context/WorkOrderContext"
 import { useMode } from "@/context/ModeContext"
@@ -13,11 +13,12 @@ interface BreadcrumbItem {
 
 interface TopBarProps {
   breadcrumbs: BreadcrumbItem[]
+  onMenuOpen?: () => void
 }
 
 const AVATAR_COLORS = ["#384ff7", "#26ad61", "#f59e0a", "#e84545", "#944ade"]
 
-export function TopBar({ breadcrumbs }: TopBarProps) {
+export function TopBar({ breadcrumbs, onMenuOpen }: TopBarProps) {
   const navigate = useNavigate()
   const location = useLocation()
   const { members } = useTeam()
@@ -76,15 +77,19 @@ export function TopBar({ breadcrumbs }: TopBarProps) {
   return (
     <header className="flex h-16 items-center justify-between border-b border-[#ebedf0] bg-white px-6 shrink-0">
       <div className="flex items-center gap-1 min-w-0">
+        {/* Mobiili: takaisin valkoisen headerin vasemmassa reunassa */}
+        <Link to="/" className="sm:hidden flex items-center justify-center size-8 text-gray-700 hover:text-gray-900 no-underline shrink-0">
+          <ChevronLeft className="h-5 w-5" />
+        </Link>
         <button
           onClick={handleBack}
-          className="flex items-center justify-center rounded-lg size-8 text-[#66707a] hover:text-gray-900 hover:bg-gray-100 transition-colors shrink-0"
+          className="hidden sm:flex items-center justify-center rounded-lg size-8 text-[#66707a] hover:text-gray-900 hover:bg-gray-100 transition-colors shrink-0"
         >
           <Home className="h-5 w-5" />
         </button>
 
         {breadcrumbs.length > 0 && (
-          <nav className="flex items-center">
+          <nav className="hidden sm:flex items-center">
             {breadcrumbs.map((crumb, i) => {
               const isLast = i === breadcrumbs.length - 1
               return (
@@ -157,10 +162,10 @@ export function TopBar({ breadcrumbs }: TopBarProps) {
             {displayAvatars.map((p, i) => (
               <div
                 key={p.id}
-                className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold text-white border-2 border-white shrink-0"
+                className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-semibold text-white border-2 border-white shrink-0"
                 style={{
                   backgroundColor: p.color || AVATAR_COLORS[i % AVATAR_COLORS.length],
-                  marginRight: i < displayAvatars.length - 1 ? "-8px" : "0",
+                  marginRight: i < displayAvatars.length - 1 ? "-12px" : "0",
                 }}
                 title={p.name}
               >
@@ -174,13 +179,22 @@ export function TopBar({ breadcrumbs }: TopBarProps) {
           <>
             <button
               onClick={() => setInviteOpen(true)}
-              className="flex items-center gap-1 border border-[#d9dee5] rounded-lg pl-4 pr-3 py-2 text-sm font-semibold text-[#363d45] hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-center border border-[#d9dee5] rounded-lg p-2 text-[#363d45] hover:bg-gray-50 transition-colors"
             >
-              Kutsu
               <Plus className="h-4.5 w-4.5" />
             </button>
             <InviteModal open={inviteOpen} onOpenChange={setInviteOpen} />
           </>
+        )}
+
+        {/* Hamburger — vain mobiilissa, oikeassa reunassa */}
+        {onMenuOpen && (
+          <button
+            onClick={onMenuOpen}
+            className="sm:hidden flex items-center justify-center size-9 text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
         )}
       </div>
     </header>

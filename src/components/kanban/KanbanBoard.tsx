@@ -31,7 +31,6 @@ export function KanbanBoard({ statusFilter, sourceFilter, searchText }: KanbanBo
     <div className="flex gap-5 overflow-x-auto pb-6 -mx-2 px-2">
       {kanbanColumns.map((column) => {
         const columnOrders = filtered.filter((wo) => wo.status === column.status)
-
         return (
           <KanbanColumn
             key={column.id}
