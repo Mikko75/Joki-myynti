@@ -4,9 +4,9 @@ import { cn } from "@/lib/utils"
 import { useWorkOrders } from "@/context/WorkOrderContext"
 
 const NAV_BG = {
-  backgroundColor: "#ffffff",
+  backgroundColor: "var(--color-sidebar-main)",
   paddingBottom: "env(safe-area-inset-bottom, 0px)",
-  borderTop: "1px solid #e5e7eb",
+  borderTop: "1px solid #2a2a2a",
 }
 
 export function MobileBottomNav() {
@@ -43,7 +43,7 @@ export function MobileBottomNav() {
               to={to}
               className={cn(
                 "flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors no-underline",
-                isActive ? "text-gray-900" : "text-gray-400 hover:text-gray-600"
+                isActive ? "text-white" : "text-gray-500 hover:text-gray-300"
               )}
             >
               <div className="relative">
